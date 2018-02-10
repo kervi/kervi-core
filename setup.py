@@ -22,7 +22,7 @@ setup(
         'kervi/hal',
         'kervi/sensors',
         'kervi/spine',
-        'kervi/utility',
+        'kervi/core/utility',
         'kervi/values',
         'kervi/version',
         
@@ -54,14 +54,5 @@ setup(
         "Operating System :: POSIX :: Linux",
         "Programming Language :: Python :: 3.4"
     ],
-    install_requires=[
-        
-    ],
-    extras_require={
-        
-    },
-    include_package_data=True,
-    package_data={
-        
-    }
+    
 )
