@@ -2,7 +2,7 @@
 from distutils.core import setup
 import distutils
 try:
-    from kervi.version import VERSION
+    from kervi.core.version import VERSION
 except:
     VERSION = "0.0"
 
@@ -18,14 +18,13 @@ setup(
         'kervi/actions',
         'kervi/config',
         'kervi/controllers',
+        'kervi/core/utility',
+        'kervi/core/version',
         'kervi/dashboards',
         'kervi/hal',
         'kervi/sensors',
         'kervi/spine',
-        'kervi/core/utility',
-        'kervi/values',
-        'kervi/version',
-        
+        'kervi/values'
     ],
     version=VERSION,
     description="""

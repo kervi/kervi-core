@@ -134,8 +134,7 @@ class NumberValue(KerviValue):
             default_system = config.default
             units = config.systems[default_system]
 
-            display_unit = units.get(self._value_type, self._value_unit)
-            print()
+            display_unit = units.get(self._type, self._unit)
             return display_unit
 
     @display_unit.setter
@@ -150,7 +149,7 @@ class NumberValue(KerviValue):
     def _get_info(self, **kwargs):
         return {
             "isInput":self.is_input,
-            "value_unit":self._value_unit,
+            "value_unit":self._unit,
             "value":self.value,
             "maxValue":self._max_value,
             "minValue":self._min_value,

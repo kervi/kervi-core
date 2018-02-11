@@ -23,11 +23,8 @@ from kervi.config.configuration import _Configuration
 
 this = sys.modules[__name__]
 
-if not hasattr(this, "Configuration"):
-    this.Configuration = _Configuration()
+this.Configuration = _Configuration()
 
 def load(**kwargs):
-    if not this.Configuration:
-        this.Configuration = _Configuration() 
     this.Configuration._load(**kwargs)
     return this.Configuration

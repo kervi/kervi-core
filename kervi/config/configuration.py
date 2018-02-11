@@ -63,6 +63,7 @@ class _KerviConfig:
         return self._keys
 
 class _Configuration:
+    instance = None
     class __ConfigClass(_KerviConfig):
         def __init__(self):
             super()
@@ -153,14 +154,16 @@ class _Configuration:
             print("cl", dir(self))
 
 
-    instance = None
+    
     def __new__(cls): # __new__ always a classmethod
         if not _Configuration.instance:
             _Configuration.instance = _Configuration.__ConfigClass()
         return _Configuration.instance
 
     def __getattr__(self, name):
-        return getattr(self.instance, name)
+        if name == "instance":
+            return _Configuration.instance
+        return getattr(_Configuration.instance, name)
 
     def __setattr__(self, name, value):
-        return setattr(self.instance, name, value)
+        return setattr(_Configuration.instance, name, value)
