@@ -14,7 +14,7 @@ class MockupSensorDeviceDriver(SensorDeviceDriver):
 
     @property
     def unit(self):
-        return "%"
+        return "C"
 
 class MockupMultiDimSensorDeviceDriver(SensorDeviceDriver):
     def __init__(self):
