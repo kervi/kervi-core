@@ -28,7 +28,7 @@ setup(
     ],
     version=VERSION,
     description="""
-    Core components for the Kervi framework .
+    Core components for the Kervi framework.
     """,
     author='Tim Wentzlau',
     author_email='tim.wentzlau@gmail.com',
