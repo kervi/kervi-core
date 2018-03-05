@@ -117,6 +117,7 @@ class _Configuration:
             return True
 
         def to_json(self):
+            #print("c", self._config)
             return json.dumps(self._config)
 
         def get(self, name, default_value=None):

@@ -98,7 +98,8 @@ def _launch(scope, name, process_class, config_data, ipc_port, root_close, **kwa
     from kervi.config import Configuration
     Configuration._load(json_data=config_data)
     process_config = Configuration
-    k_logging.init_process_logging(name, process_config.log)
+    if "log" in process_config:
+        k_logging.init_process_logging(name, process_config.log)
     log = k_logging.KerviLog(name)
     log.info('create process:{0} ipc port:{1}:', process_class.__name__, ipc_port)
     process = process_class(scope, name, process_config, ipc_port, root_close, **kwargs)

@@ -361,12 +361,24 @@ class KerviValue(KerviComponent):
         return ranges
 
     def _get_info(self, **kwargs):
+        
         return {
             "value":self.value,
             "command":self.command,
             "ranges":self._event_ranges,
-            "visible": self.visible
+            "visible": self.visible,
         }
 
     def on_get_value(self):
         return self.value
+
+    def _get_bus_routes(self):
+        result = [] 
+        for link in self._spine_observers.keys():
+            result += [{
+                "id": link,
+                "direction": "in",
+                "topic_type": "event",
+                "topic": "valueChanged"
+                }]
+        return result

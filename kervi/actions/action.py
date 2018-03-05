@@ -16,12 +16,39 @@ class _LinkedAction(object):
         self.spine = Spine()
         self.spine.register_event_handler("actionDone", self._action_done, action_id)
         self.spine.register_event_handler("actionStarted", self._action_started, action_id)
+        self.spine.register_query_handler("getComponentRoutes", self._get_component_bus_routes)
         self._state = ACTION_STOPPED
         self._action_event = None
         self._action_lock = threading.Lock()
         self._process_locked = False
         self._is_running = False
         self._last_result = None
+
+    
+    def _get_component_bus_routes(self):
+        return {
+            "id": None,
+            "routes": [
+                {
+                    "id": self._action_id,
+                    "direction": "in",
+                    "topic_type": "event",
+                    "topic": "actionStarted"
+                },
+                {
+                    "id": self._action_id,
+                    "direction": "in",
+                    "topic_type": "event",
+                    "topic": "actionDone"
+                },
+                {
+                    "id": self._action_id,
+                    "direction": "out",
+                    "topic_type": "command",
+                    "topic": "kervi_action_" + self._action_id
+                }
+            ],
+        }
 
     def _action_done(self, id, state, result):
         if self._state == ACTION_RUNNING:

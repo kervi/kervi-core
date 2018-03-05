@@ -58,6 +58,7 @@ class KerviComponent(object):
                 groups=self.user_groups
             )
             self.spine.register_query_handler("getComponentInfo", self._get_component_info, groups=self.user_groups)
+            self.spine.register_query_handler("getComponentRoutes", self._get_component_bus_routes)
 
     @property
     def component_id(self):
@@ -207,6 +208,7 @@ class KerviComponent(object):
                 info["ui"] = self._camel_case_parameters(ui_parameters)
                 return info
 
+
     def _underscore_to_camelcase(self, value):
         def _camelcase():
             yield str.lower
@@ -236,4 +238,22 @@ class KerviComponent(object):
                     "parameters":param
                 }]
         
+        return result
+
+    def _get_component_bus_routes(self):
+        result = self._get_bus_routes()
+        return {
+            "id": self._component_id,
+            "routes": result,
+        }
+
+    def _get_bus_routes(self):
+        result = [] 
+        for link in self._dashboard_links:
+            result += [{
+                "id": link.link_id,
+                "direction": "out",
+                "topic_type": "event",
+                "topic": "valueChanged"
+                }]
         return result

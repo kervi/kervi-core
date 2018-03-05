@@ -301,3 +301,9 @@ class Dashboard(KerviComponent):
             "panelWidth": self.panel_width,
             "panelHeight": self.panel_height
         }
+
+
+    def _get_references(self):
+        panels = []
+        for panel in self.panels:
+            panels += [panel._get_info(**kwargs)]
