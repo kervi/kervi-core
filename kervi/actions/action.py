@@ -280,6 +280,23 @@ class Action(KerviComponent):
             "running":self._is_running
         }
 
+    def _get_bus_routes(self):
+        result = [
+            {
+                "id": None,
+                "direction": "in",
+                "topic_type": "command",
+                "topic": "kervi_action_" + self.action_id
+            },
+            {
+                "id": None,
+                "direction": "in",
+                "topic_type": "command",
+                "topic": "kervi_action_interupt_" + self.action_id
+            }
+        ]
+        return result
+
     def link_to_dashboard(self, dashboard_id, section_id, **kwargs):
         r"""
         Links this action to a dashboard panel.
