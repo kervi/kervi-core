@@ -180,7 +180,7 @@ class KerviValue(KerviComponent):
 
             self._spine_observers[source] = transformation
 
-    def link_to_dashboard(self, dashboard_id, section_id, **kwargs):
+    def link_to_dashboard(self, dashboard_id=None, panel_id=None, **kwargs):
         r"""
         Links this value to a dashboard panel.
 
@@ -191,7 +191,7 @@ class KerviValue(KerviComponent):
         :param panel_id:
             Id of the panel on the dashboard to link to.
         :type panel_id: str
-
+        
         :param \**kwargs:
             Use the kwargs below to override default values for ui parameters
 
@@ -216,9 +216,9 @@ class KerviValue(KerviComponent):
         KerviComponent.link_to_dashboard(
             self,
             dashboard_id,
-            section_id,
+            panel_id,
             **kwargs
-            )
+        )
 
     def add_observer(self, observer, transformation=None):
         """

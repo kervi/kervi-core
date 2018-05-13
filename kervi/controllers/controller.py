@@ -93,7 +93,7 @@ class Controller(KerviComponent):
     def controller_id(self):
         return self.component_id
 
-    def link_to_dashboard(self, dashboard_id, section_id, **kwargs):
+    def link_to_dashboard(self, dashboard_id=None, panel_id=None, **kwargs):
         r"""
         Links this component to a dashboard section all input are displayed.
 
@@ -101,9 +101,10 @@ class Controller(KerviComponent):
             id of the dashboard to link to.
         :type section_id: str
 
-        :param section_id:
+        :param panel_id:
             id of the section.
-        :type section_id: str
+        :type panel_id: str
+
 
         :param \**kwargs:
             Use the kwargs below to override default values set in ui_parameters
@@ -123,9 +124,9 @@ class Controller(KerviComponent):
         KerviComponent.link_to_dashboard(
             self,
             dashboard_id,
-            section_id,
+            panel_id,
             *kwargs
-            )
+        )
 
     def _on_app_ready(self, id):
         self._active = True

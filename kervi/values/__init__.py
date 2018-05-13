@@ -43,6 +43,7 @@ class NumberValue(KerviValue):
         self._value = 0
         self._delta = None
         self._ui_parameters["type"] = ""
+        self._ui_parameters["value_icon"] = None
         self._ui_parameters["min_integer_digits"] = 1
         self._ui_parameters["min_fraction_digits"] = 1
         self._ui_parameters["max_fraction_digits"] = 1
@@ -52,7 +53,7 @@ class NumberValue(KerviValue):
         self._ui_parameters["chart_grid"] = True
         self._ui_parameters["chart_interval"] = "5min"
         self._ui_parameters["tick"] = 1.0
-        self._ui_parameters["display_unit"] = None
+        self._ui_parameters["display_unit"] = True
 
         self._last_reading = None
 
@@ -217,10 +218,11 @@ class NumberValue(KerviValue):
                 groups=self.user_groups
             )
 
-    def link_to_dashboard(self, dashboard_id, section_id, **kwargs):
+    def link_to_dashboard(self, dashboard_id=None, panel_id=None, **kwargs):
         r"""
         Links this value to a dashboard panel.
 
+        
         :param dashboard_id:
             Id of the dashboard to link to.
         :type dashboard_id: str
@@ -228,6 +230,8 @@ class NumberValue(KerviValue):
         :param panel_id:
             Id of the panel on the dashboard to link to.
         :type panel_id: str
+        
+
 
         :param \**kwargs:
             Use the kwargs below to override default values for ui parameters
@@ -265,9 +269,9 @@ class NumberValue(KerviValue):
         KerviComponent.link_to_dashboard(
             self,
             dashboard_id,
-            section_id,
+            panel_id,
             **kwargs
-            )
+        )
 
 
 class StringValue(KerviValue):
@@ -280,7 +284,7 @@ class StringValue(KerviValue):
         self._value = ""
         self._ui_parameters["type"] = "text"
 
-    def link_to_dashboard(self, dashboard_id, section_id, **kwargs):
+    def link_to_dashboard(self, dashboard_id=None, panel_id=None, **kwargs):
         r"""
         Links this value to a dashboard panel.
 
@@ -291,7 +295,7 @@ class StringValue(KerviValue):
         :param panel_id:
             Id of the panel on the dashboard to link to.
         :type panel_id: str
-
+        
         :param \**kwargs:
             Use the kwargs below to override default values for ui parameters
 
@@ -316,7 +320,7 @@ class StringValue(KerviValue):
         KerviComponent.link_to_dashboard(
             self,
             dashboard_id,
-            section_id,
+            panel_id,
             **kwargs
             )
 
@@ -350,7 +354,7 @@ class BooleanValue(KerviValue):
         self._ui_parameters["button_height"] = None,
         self._ui_parameters["input_size"] = 0
 
-    def link_to_dashboard(self, dashboard_id, section_id, **kwargs):
+    def link_to_dashboard(self, dashboard_id=None, panel_id=None, **kwargs):
         r"""
         Links this value to a dashboard panel.
 
@@ -361,6 +365,7 @@ class BooleanValue(KerviValue):
         :param panel_id:
             Id of the panel on the dashboard to link to.
         :type panel_id: str
+
 
         :param \**kwargs:
             Use the kwargs below to override default values for ui parameters
@@ -396,9 +401,9 @@ class BooleanValue(KerviValue):
         KerviComponent.link_to_dashboard(
             self,
             dashboard_id,
-            section_id,
+            panel_id,
             **kwargs
-            )
+        )
 
 class EnumValue(KerviValue):
     r"""

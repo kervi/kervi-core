@@ -297,17 +297,19 @@ class Action(KerviComponent):
         ]
         return result
 
-    def link_to_dashboard(self, dashboard_id, section_id, **kwargs):
+    def link_to_dashboard(self, dashboard_id=None, panel_id=None, **kwargs):
         r"""
         Links this action to a dashboard panel.
 
         :param dashboard_id:
             Id of the dashboard to link to.
         :type dashboard_id: str
-
+        
         :param panel_id:
             Id of the panel on the dashboard to link to.
         :type panel_id: str
+        
+
 
         :Keyword Arguments:
             
@@ -346,9 +348,9 @@ class Action(KerviComponent):
         KerviComponent.link_to_dashboard(
             self,
             dashboard_id,
-            section_id,
+            panel_id,
             **kwargs
-            )
+        )
 
 
     def set_interupt(self, method=None, **kwargs):
