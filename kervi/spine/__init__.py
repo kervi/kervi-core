@@ -20,7 +20,7 @@
 # SOFTWARE.
 
 """ 
-This module bootstraps the cental messagegin system in Kervi.
+This module bootstraps the central messagegin system in Kervi.
 Include this module in all modules where communication is needed.
 
 Usage:
