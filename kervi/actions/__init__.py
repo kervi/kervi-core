@@ -21,12 +21,12 @@ if not Actions:
     Actions = _Actions()
 
 
-class _SetInterupt():
+class _SetInterrupt():
     def __init__(self, action_id):
         self._action_id = action_id
 
     def __call__(self, f):
-        Actions.add_unbound_interupt(f.__qualname__, self._action_id)
+        Actions.add_unbound_interrupt(f.__qualname__, self._action_id)
         return f
 
 #from kervi.actions.action_list import _Actions
@@ -65,7 +65,7 @@ def action(method=None, **kwargs)  -> Action:
             return action
         else:
             Actions.add_unbound(f.__qualname__, action_id, name)
-            setattr(f, "set_interupt", _SetInterupt(action_id))
+            setattr(f, "set_interrupt", _SetInterrupt(action_id))
             return f
 
     if method:
