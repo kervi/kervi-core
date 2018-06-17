@@ -52,6 +52,9 @@ class NumberValue(KerviValue):
         self._ui_parameters["chart_buttons"] = True
         self._ui_parameters["chart_grid"] = True
         self._ui_parameters["chart_interval"] = "5min"
+        self._ui_parameters["chart_fill"] = True
+        self._ui_parameters["chart_point"] = 0
+
         self._ui_parameters["tick"] = 1.0
         self._ui_parameters["display_unit"] = True
 
@@ -283,6 +286,7 @@ class StringValue(KerviValue):
         #self.spine = Spine()
         self._value = ""
         self._ui_parameters["type"] = "text"
+        self._ui_parameters["input_size"] = "5rem"
 
     def link_to_dashboard(self, dashboard_id=None, panel_id=None, **kwargs):
         r"""
@@ -312,7 +316,7 @@ class StringValue(KerviValue):
             * *inline* (``bool``) -- Display value and label in its actual size
                 The value will only occupy as much space as the label and input takes.
 
-            * *input_size* (``int``) -- width of the slider as a percentage of the total container it sits in.
+            * *input_size* (``int | str``) -- Width of the input field. Use px, % or rem as unit.
 
             * *value_size* (``int``) -- width of the value area as a percentage of the total container it sits in.
 
@@ -334,6 +338,25 @@ class DateTimeValue(KerviValue):
         #self.spine = Spine()
         self._value = ""
         self._ui_parameters["type"] = input_type
+
+    @property
+    def value(self):
+        """Current value of the component"""
+        if self._value:
+            #print("dvx", datetime.strptime(self._value,'%Y-%m-%dT%H:%M:%SZ'))
+            return datetime.strptime(self._value,'%Y-%m-%dT%H:%M:%SZ')
+        return None
+
+    @value.setter
+    def value(self, new_value):
+        """
+        Updates the value.
+        If the change exceeds the change delta observers and linked values are notified.  
+        """
+        datetime_value = None
+        if new_value:
+            datetime_value = new_value.strftime("%Y-%M-%dT%H:%M:%SZ")
+        self._set_value(datetime_value)
 
 class BooleanValue(KerviValue):
     """
@@ -422,7 +445,7 @@ class EnumValue(KerviValue):
     """
     def __init__(self, name, **kwargs):
         KerviValue.__init__(self, name, "enum-value", **kwargs)
-
+        self._value = []
         self.options = []
         self.selected_options = []
         self._ui_parameters["type"] = "dropdown"
@@ -441,13 +464,15 @@ class EnumValue(KerviValue):
         self.options += [option]
         if selected:
             self.selected_options += [option]
+            self._value.append(value)
             if self._persist_value:
                 self.settings.store_value("selected_options", self.selected_options)
 
     def _get_info(self, **kwargs):
         return {
             "options": self.options,
-            "command":self.command
+            "command":self.command,
+            "value":self.value
         }
 
     def _set_value(self, selected_options, allow_persist=True):
@@ -460,19 +485,56 @@ class EnumValue(KerviValue):
             option["selected"] = False
 
         self.selected_options = []
-        for selected_option in selected_options:
-            for option in self.options:
-                if option["value"] == selected_option:
-                    option["selected"] = True
-                    self.selected_options += [option]
+        selected = []
+        if selected_options:
+            for selected_option in selected_options:
+                for option in self.options:
+                    if option["value"] == selected_option:
+                        option["selected"] = True
+                        self.selected_options += [option]
+                        selected.append(option["value"])
+            
+        old_value = self._value
+        new_value = selected
+        self._value = new_value
+        self.value_changed(new_value, old_value)
 
-        self.value_changed(self.selected_options, None)
+        for observer in self._observers:
+            if isinstance(observer, tuple):
+                item, transformation = observer
+                if transformation:
+                    item.kervi_value_changed(self, transformation(new_value))
+                else:
+                    item.kervi_value_changed(self, new_value)
+            else:
+                observer.kervi_value_changed(self, new_value)
 
         if self._persist_value and allow_persist:
-            self.settings.store_value("value", self.selected_options)
+            self.settings.store_value("value", self.value)
 
+        timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        self._last_reading = time.clock()
+
+        #val = {"value_id":self.component_id, "value":new_value, "timestamp":datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")}
+        
         self.spine.trigger_event(
             "valueChanged",
             self.component_id,
-            {"select":self.component_id, "value":self.options}
+            {"id":self.component_id, "value":new_value, "timestamp":datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")},
+            self._log_values,
+            groups=self.user_groups
         )
+
+    
+        
+        # self._value = self.selected_options
+        # self.value_changed(self.selected_options, None)
+
+        # if self._persist_value and allow_persist:
+        #     self.settings.store_value("value", self.selected_options)
+
+        # self.spine.trigger_event(
+        #     "valueChanged",
+        #     self.component_id,
+        #     {"select":self.component_id, "value":self.selected_options}
+        # )

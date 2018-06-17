@@ -30,7 +30,7 @@ from kervi.values.value_list import ValueList
 from kervi.values.kervi_value import KerviValue
 from kervi.values import NumberValue
 from kervi.actions import Actions
-from kervi.actions.action import Action, _ActionInterupt
+from kervi.actions.action import Action, _ActionInterrupt
 
 class Controller(KerviComponent):
     """
@@ -81,11 +81,11 @@ class Controller(KerviComponent):
             try:
                 if hasattr(self, method_name):
                     method = getattr(self, method_name)
-                    if hasattr(method, "__qualname__") and Actions.is_unbound_interupt(method.__qualname__):
-                        action_id = Actions.get_unbound_interupt(method.__qualname__)
+                    if hasattr(method, "__qualname__") and Actions.is_unbound_interrupt(method.__qualname__):
+                        action_id = Actions.get_unbound_interrupt(method.__qualname__)
                         action = self.actions[action_id]
-                        action._interupt = _ActionInterupt(method)
-                        action.set_ui_parameter("interupt_enabled", True)
+                        action._interrupt = _ActionInterrupt(method)
+                        action.set_ui_parameter("interrupt_enabled", True)
             except KeyError:
                 pass
 

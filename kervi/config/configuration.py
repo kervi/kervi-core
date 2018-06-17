@@ -47,6 +47,11 @@ class _KerviConfig:
         else:
             return getattr(self, i)
 
+    def to_json(self):
+            #print("c", self._config)
+            
+            return json.dumps(self)
+
     def __len__(self):
         return len(self._keys)
 
