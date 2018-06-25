@@ -47,6 +47,7 @@ class _KerviConfig:
         else:
             return getattr(self, i)
 
+
     def __len__(self):
         return len(self._keys)
 
@@ -57,12 +58,26 @@ class _KerviConfig:
                 return getattr(self, name)
             else:
                 return default_value
+    def as_dict(self):
+        d = dict()
+        for key in self._keys:
+            v = getattr(self, key)
+            if isinstance(v, _KerviConfig):
+                d[key] = v.as_dict()
+            else:
+                d[key] = getattr(self, key)
+
+        return d
+        
+    def to_json(self):
+        return json.dumps(self.as_dict())
 
     @property
     def keys(self):
         return self._keys
 
 class _Configuration:
+    instance = None
     class __ConfigClass(_KerviConfig):
         def __init__(self):
             super()
@@ -116,6 +131,7 @@ class _Configuration:
             return True
 
         def to_json(self):
+            #print("c", self._config)
             return json.dumps(self._config)
 
         def get(self, name, default_value=None):
@@ -153,14 +169,16 @@ class _Configuration:
             print("cl", dir(self))
 
 
-    instance = None
+    
     def __new__(cls): # __new__ always a classmethod
         if not _Configuration.instance:
             _Configuration.instance = _Configuration.__ConfigClass()
         return _Configuration.instance
 
     def __getattr__(self, name):
-        return getattr(self.instance, name)
+        if name == "instance":
+            return _Configuration.instance
+        return getattr(_Configuration.instance, name)
 
     def __setattr__(self, name, value):
-        return setattr(self.instance, name, value)
+        return setattr(_Configuration.instance, name, value)

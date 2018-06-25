@@ -2,7 +2,7 @@
 from distutils.core import setup
 import distutils
 try:
-    from kervi.version import VERSION
+    from kervi.core.version import VERSION
 except:
     VERSION = "0.0"
 
@@ -18,18 +18,17 @@ setup(
         'kervi/actions',
         'kervi/config',
         'kervi/controllers',
+        'kervi/core/utility',
+        'kervi/core/version',
         'kervi/dashboards',
         'kervi/hal',
         'kervi/sensors',
         'kervi/spine',
-        'kervi/utility',
-        'kervi/values',
-        'kervi/version',
-        
+        'kervi/values'
     ],
     version=VERSION,
     description="""
-    Core components for the Kervi framework .
+    Core components for the Kervi framework.
     """,
     author='Tim Wentzlau',
     author_email='tim.wentzlau@gmail.com',
@@ -54,14 +53,5 @@ setup(
         "Operating System :: POSIX :: Linux",
         "Programming Language :: Python :: 3.4"
     ],
-    install_requires=[
-        
-    ],
-    extras_require={
-        
-    },
-    include_package_data=True,
-    package_data={
-        
-    }
+    
 )

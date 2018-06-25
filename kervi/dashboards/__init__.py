@@ -24,6 +24,8 @@ A dashboard is the main ui component in a kervi application.
 
 """
 
+_DASHBOARDS = []
+
 from kervi.core.utility.component import KerviComponent
 import kervi.spine as spine
 
@@ -52,7 +54,7 @@ class DashboardPanelGroup(object):
         self.spine = spine.Spine()
         self.group_id = kwargs.get("title", None)
         self.ui_parameters = {
-            "title":kwargs.get("title", ""),
+            "label":kwargs.get("title", ""),
             "width":kwargs.get("width", 0),
             "height":kwargs.get("height", 0),
             "gauge_width":kwargs.get("gauge_width", 0),
@@ -141,7 +143,7 @@ class DashboardPanel(object):
         self.panel_id = panel_id
 
         self.ui_parameters = {
-            "title":kwargs.pop("title", ""),
+            "label":kwargs.pop("title", ""),
             "width":kwargs.pop("width", 0),
             "height":kwargs.pop("height", 0),
             "userLog":kwargs.pop("user_log", False),
@@ -186,19 +188,19 @@ class DashboardPanel(object):
 
         if authorized:
             components = []
-            components = self.spine.send_query(
-                "getDashboardComponents",
-                self.dashboard.dashboard_id,
-                self.panel_id
-            )
-            panel_components = self._get_panel_components(components)
+            #components = self.spine.send_query(
+            #    "getDashboardComponents",
+            #    self.dashboard.dashboard_id,
+            #    self.panel_id
+            #)
+            #panel_components = self._get_panel_components(components)
             
             return {
                 "id": self.panel_id,
                 "type": "panel",
                 "uiParameters": self.ui_parameters,
                 "dashboard": self.dashboard.get_reference(),
-                "components": panel_components
+                "components": []
             }
 
 class Dashboard(KerviComponent):
@@ -241,7 +243,9 @@ class Dashboard(KerviComponent):
 
     """
     def __init__(self, dashboard_id, name, panels=None, **kwargs):
+        global _DASHBOARDS
         KerviComponent.__init__(self, dashboard_id, "dashboard", name, **kwargs)
+        _DASHBOARDS.append(self)
         self.dashboard_id = dashboard_id
         self.is_default = kwargs.pop("is_default", False)
         self.gauge_width = kwargs.pop("gauge_width", 0)
@@ -301,3 +305,16 @@ class Dashboard(KerviComponent):
             "panelWidth": self.panel_width,
             "panelHeight": self.panel_height
         }
+
+
+    def _get_references(self, **kwargs):
+        panels = []
+        for panel in self.panels:
+            panels += [panel._get_info(**kwargs)]
+
+    @classmethod
+    def _add_default(cls):
+        if len(_DASHBOARDS) == 0:
+            _DASHBOARDS.append(
+                Dashboard("default", "", is_default=True)
+            )

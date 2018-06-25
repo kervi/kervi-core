@@ -30,7 +30,7 @@ from kervi.values.value_list import ValueList
 from kervi.values.kervi_value import KerviValue
 from kervi.values import NumberValue
 from kervi.actions import Actions
-from kervi.actions.action import Action, _ActionInterupt
+from kervi.actions.action import Action, _ActionInterrupt
 
 class Controller(KerviComponent):
     """
@@ -81,11 +81,11 @@ class Controller(KerviComponent):
             try:
                 if hasattr(self, method_name):
                     method = getattr(self, method_name)
-                    if hasattr(method, "__qualname__") and Actions.is_unbound_interupt(method.__qualname__):
-                        action_id = Actions.get_unbound_interupt(method.__qualname__)
+                    if hasattr(method, "__qualname__") and Actions.is_unbound_interrupt(method.__qualname__):
+                        action_id = Actions.get_unbound_interrupt(method.__qualname__)
                         action = self.actions[action_id]
-                        action._interupt = _ActionInterupt(method)
-                        action.set_ui_parameter("interupt_enabled", True)
+                        action._interrupt = _ActionInterrupt(method)
+                        action.set_ui_parameter("interrupt_enabled", True)
             except KeyError:
                 pass
 
@@ -93,7 +93,7 @@ class Controller(KerviComponent):
     def controller_id(self):
         return self.component_id
 
-    def link_to_dashboard(self, dashboard_id, section_id, **kwargs):
+    def link_to_dashboard(self, dashboard_id=None, panel_id=None, **kwargs):
         r"""
         Links this component to a dashboard section all input are displayed.
 
@@ -101,9 +101,10 @@ class Controller(KerviComponent):
             id of the dashboard to link to.
         :type section_id: str
 
-        :param section_id:
+        :param panel_id:
             id of the section.
-        :type section_id: str
+        :type panel_id: str
+
 
         :param \**kwargs:
             Use the kwargs below to override default values set in ui_parameters
@@ -123,9 +124,9 @@ class Controller(KerviComponent):
         KerviComponent.link_to_dashboard(
             self,
             dashboard_id,
-            section_id,
+            panel_id,
             *kwargs
-            )
+        )
 
     def _on_app_ready(self, id):
         self._active = True

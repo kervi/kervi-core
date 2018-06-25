@@ -1,4 +1,4 @@
-from kervi.utility.component import KerviComponent
+from kervi.core.utility.component import KerviComponent
 from mockup_spine import MockupSpine
 
 def test_instantiation():

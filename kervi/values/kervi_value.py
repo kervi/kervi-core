@@ -136,7 +136,7 @@ class KerviValue(KerviComponent):
     def _load_persisted(self):
         if self._persist_value:
             value = self.settings.retrieve_value("value", self._default_value)
-            print("v", value)
+            #print("v", value)
             self._set_value(value, False)
 
     def link_to(self, source, transformation=None):
@@ -180,7 +180,7 @@ class KerviValue(KerviComponent):
 
             self._spine_observers[source] = transformation
 
-    def link_to_dashboard(self, dashboard_id, section_id, **kwargs):
+    def link_to_dashboard(self, dashboard_id=None, panel_id=None, **kwargs):
         r"""
         Links this value to a dashboard panel.
 
@@ -191,7 +191,7 @@ class KerviValue(KerviComponent):
         :param panel_id:
             Id of the panel on the dashboard to link to.
         :type panel_id: str
-
+        
         :param \**kwargs:
             Use the kwargs below to override default values for ui parameters
 
@@ -216,9 +216,9 @@ class KerviValue(KerviComponent):
         KerviComponent.link_to_dashboard(
             self,
             dashboard_id,
-            section_id,
+            panel_id,
             **kwargs
-            )
+        )
 
     def add_observer(self, observer, transformation=None):
         """
@@ -249,7 +249,6 @@ class KerviValue(KerviComponent):
 
             for observer in self._observers:
                 item, transformation = observer
-                print("o", item, transformation)
                 if transformation:
                     item.kervi_value_changed(self, transformation(nvalue))
                 else:
@@ -356,17 +355,29 @@ class KerviValue(KerviComponent):
             if isinstance(value, tuple):
                 value_start, value_end = value
                 ranges += [{"start":value_start, "end":value_end, "type":event_type}]
-            if event_type:
+            elif event_type:
                 ranges += [{"start":value, "end":None, "type":event_type}]
         return ranges
 
     def _get_info(self, **kwargs):
+        
         return {
             "value":self.value,
             "command":self.command,
             "ranges":self._event_ranges,
-            "visible": self.visible
+            "visible": self.visible,
         }
 
     def on_get_value(self):
         return self.value
+
+    def _get_bus_routes(self):
+        result = [] 
+        for link in self._spine_observers.keys():
+            result += [{
+                "id": link,
+                "direction": "in",
+                "topic_type": "event",
+                "topic": "valueChanged"
+                }]
+        return result

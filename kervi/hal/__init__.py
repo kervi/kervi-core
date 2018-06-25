@@ -73,6 +73,9 @@ def get_one_wire(address):
 def get_camera_driver(source = None):
     return _DRIVER.get_camera_driver(source)
 
+def service_commands(commands, app_name, app_id, script_path):
+    return _DRIVER.service_commands(commands, app_name, app_id, script_path)
+
 #if not _DRIVER:
 #    _load()
 

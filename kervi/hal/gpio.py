@@ -101,7 +101,7 @@ class LogicIOChannel(BooleanValue):
     def value_changed(self, new_value, old_value):
         self.set(new_value)
 
-    def dynamic_value_changed(self, changed_input, value):
+    def kervi_value_changed(self, changed_input, value):
         if changed_input == self.pwm["duty_cycle"]:
             if self.pwm["active"].value:
                 self._device.pwm_start(self._channel, duty_cycle=changed_input.value)

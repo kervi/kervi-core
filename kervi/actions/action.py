@@ -16,12 +16,39 @@ class _LinkedAction(object):
         self.spine = Spine()
         self.spine.register_event_handler("actionDone", self._action_done, action_id)
         self.spine.register_event_handler("actionStarted", self._action_started, action_id)
+        self.spine.register_query_handler("getComponentRoutes", self._get_component_bus_routes)
         self._state = ACTION_STOPPED
         self._action_event = None
         self._action_lock = threading.Lock()
         self._process_locked = False
         self._is_running = False
         self._last_result = None
+
+    
+    def _get_component_bus_routes(self):
+        return {
+            "id": None,
+            "routes": [
+                {
+                    "id": self._action_id,
+                    "direction": "in",
+                    "topic_type": "event",
+                    "topic": "actionStarted"
+                },
+                {
+                    "id": self._action_id,
+                    "direction": "in",
+                    "topic_type": "event",
+                    "topic": "actionDone"
+                },
+                {
+                    "id": self._action_id,
+                    "direction": "out",
+                    "topic_type": "command",
+                    "topic": "kervi_action_" + self._action_id
+                }
+            ],
+        }
 
     def _action_done(self, id, state, result):
         if self._state == ACTION_RUNNING:
@@ -52,8 +79,8 @@ class _LinkedAction(object):
         """Returns the running state of the action."""
         return self._state
 
-    def interupt(self, *args, **kwargs):
-        self.spine.send_command("kervi_action_interupt_" + self._action_id, *args, **kwargs)
+    def interrupt(self, *args, **kwargs):
+        self.spine.send_command("kervi_action_interrupt_" + self._action_id, *args, **kwargs)
 
     def execute(self, *args, **kwargs):
         """Executes the action."""
@@ -96,17 +123,17 @@ class _ActionThread(threading.Thread):
     def run(self):
         self.result = self._action._execute(*self._args, **self._kwargs)
 
-class _ActionInterupt():
-    def __init__(self, interupt):
-        self._interupt = interupt
-        argspec = inspect.getargspec(interupt)
+class _ActionInterrupt():
+    def __init__(self, interrupt):
+        self._interrupt = interrupt
+        argspec = inspect.getargspec(interrupt)
         self._keywords = argspec.keywords != None
 
     def __call__(self, *args, **kwargs):
         if self._keywords:
-            self._interupt(*args, **kwargs)
+            self._interrupt(*args, **kwargs)
         else:
-            self._interupt(*args)
+            self._interrupt(*args)
 
 class Action(KerviComponent):
     """The Action class is used by the action decorator. A function or method that is marked with @actions os converted to an Action class"""
@@ -119,12 +146,12 @@ class Action(KerviComponent):
         #print("kw", self.action_id, self._keywords, argspec, handler)
         self.spine = Spine()
         self.spine.register_command_handler("kervi_action_" + action_id, self._handle_command)
-        self.spine.register_command_handler("kervi_action_interupt_" + action_id, self.interupt)
+        self.spine.register_command_handler("kervi_action_interrupt_" + action_id, self.interrupt)
         self._state = ACTION_STOPPED
         self._action_lock = threading.Lock()
         self._last_result = None
         self._is_running = False
-        self._interupt = None
+        self._interrupt = None
 
         self._ui_parameters = {
             "link_to_header": False,
@@ -151,9 +178,9 @@ class Action(KerviComponent):
         self._ui_parameters["input_size"] = 0
         self._ui_parameters["action_parameters"] = []
         #self._ui_parameters["run_command"] = "kervi_action_" + action_id
-        #self._ui_parameters["interupt_command"] = "kervi_action_interupt_" + action_id
-        self._ui_parameters["interupt_parameters"] = []
-        self._ui_parameters["interupt_enabled"] = False
+        #self._ui_parameters["interrupt_command"] = "kervi_action_interrupt_" + action_id
+        self._ui_parameters["interrupt_parameters"] = []
+        self._ui_parameters["interrupt_enabled"] = False
 
     def _execute(self, *args, **kwargs):
         kwargs.pop("injected", None) # signaling from zmq bus
@@ -232,10 +259,10 @@ class Action(KerviComponent):
             self._action_lock.release()
             return self._last_result
 
-    def interupt(self, *args, **kwargs):
-        print("interupt; ", self.action_id)
-        if self._interupt:
-            self._interupt(*args, **kwargs)
+    def interrupt(self, *args, **kwargs):
+        print("interrupt; ", self.action_id)
+        if self._interrupt:
+            self._interrupt(*args, **kwargs)
 
     @property
     def is_running(self):
@@ -249,21 +276,40 @@ class Action(KerviComponent):
     def _get_info(self, **kwargs):
         return {
             "runCommand":"kervi_action_" + self.action_id,
-            "interuptCommand":"kervi_action_interupt_" + self.action_id,
+            "interruptCommand":"kervi_action_interrupt_" + self.action_id,
             "running":self._is_running
         }
 
-    def link_to_dashboard(self, dashboard_id, section_id, **kwargs):
+    def _get_bus_routes(self):
+        result = [
+            {
+                "id": None,
+                "direction": "in",
+                "topic_type": "command",
+                "topic": "kervi_action_" + self.action_id
+            },
+            {
+                "id": None,
+                "direction": "in",
+                "topic_type": "command",
+                "topic": "kervi_action_interrupt_" + self.action_id
+            }
+        ]
+        return result
+
+    def link_to_dashboard(self, dashboard_id=None, panel_id=None, **kwargs):
         r"""
         Links this action to a dashboard panel.
 
         :param dashboard_id:
             Id of the dashboard to link to.
         :type dashboard_id: str
-
+        
         :param panel_id:
             Id of the panel on the dashboard to link to.
         :type panel_id: str
+        
+
 
         :Keyword Arguments:
             
@@ -295,21 +341,21 @@ class Action(KerviComponent):
 
             * *action_parameters* (``list``) -- List of parameters to pass to the action.
             
-            * *interupt_enabled* (``bool``) -- If true the button will send interupt to action on off. Default true if an interupt is specified for the action.
-            * *interupt_parameters* (``list``) -- List of parameters to pass to the interupt function of the action.
+            * *interrupt_enabled* (``bool``) -- If true the button will send interrupt to action on off. Default true if an interrupt is specified for the action.
+            * *interrupt_parameters* (``list``) -- List of parameters to pass to the interrupt function of the action.
             
         """
         KerviComponent.link_to_dashboard(
             self,
             dashboard_id,
-            section_id,
+            panel_id,
             **kwargs
-            )
+        )
 
 
-    def set_interupt(self, method=None, **kwargs):
+    def set_interrupt(self, method=None, **kwargs):
         """
-            Decorator that turns a function or controller method into an action interupt.
+            Decorator that turns a function or controller method into an action interrupt.
 
         """
         
@@ -317,11 +363,11 @@ class Action(KerviComponent):
             action_id = kwargs.get("action_id", f.__name__)
             name = kwargs.get("name", action_id)
             if not "." in f.__qualname__:
-                self._interupt = _ActionInterupt(f)
-                self._ui_parameters["interupt_enabled"] = True
-                return self._interupt
+                self._interrupt = _ActionInterrupt(f)
+                self._ui_parameters["interrupt_enabled"] = True
+                return self._interrupt
             else:
-                Actions.add_unbound_interupt(f.__qualname__, self)
+                Actions.add_unbound_interrupt(f.__qualname__, self)
                 return f
         
         if method:

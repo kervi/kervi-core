@@ -133,7 +133,7 @@ class Sensor(NumberValue):
     def device(self, device):
         self._device = device
 
-    def link_to_dashboard(self, dashboard_id, panel_id, **kwargs):
+    def link_to_dashboard(self, dashboard_id=None, panel_id=None, **kwargs):
         r"""
         Links the sensor to a dashboard.
 
@@ -145,7 +145,8 @@ class Sensor(NumberValue):
                 This is the id of a panel you have added your self to a dashboard or one of the
                 system panels *sys-header*, *header* or *footer*
         :type panel_id: ``str``
-
+        
+        
         :Keyword Arguments:
                         
             * **link_to_header** (``str``) -- Link this input to header of the panel.
@@ -177,7 +178,7 @@ class Sensor(NumberValue):
             for dimension in range(0, self._dimensions):
                 dimensions += [self._sub_sensors[dimension]._get_component_info()]
         return {
-            "type":self.value_type,
+            "type":self._type,
             "subSensors": dimensions,
             "isInput": False,
             "maxValue":self.max,
