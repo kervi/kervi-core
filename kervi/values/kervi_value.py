@@ -249,7 +249,6 @@ class KerviValue(KerviComponent):
 
             for observer in self._observers:
                 item, transformation = observer
-                print("o", item, transformation)
                 if transformation:
                     item.kervi_value_changed(self, transformation(nvalue))
                 else:
@@ -356,7 +355,7 @@ class KerviValue(KerviComponent):
             if isinstance(value, tuple):
                 value_start, value_end = value
                 ranges += [{"start":value_start, "end":value_end, "type":event_type}]
-            if event_type:
+            elif event_type:
                 ranges += [{"start":value, "end":None, "type":event_type}]
         return ranges
 

@@ -47,10 +47,6 @@ class _KerviConfig:
         else:
             return getattr(self, i)
 
-    def to_json(self):
-            #print("c", self._config)
-            
-            return json.dumps(self)
 
     def __len__(self):
         return len(self._keys)
@@ -62,6 +58,19 @@ class _KerviConfig:
                 return getattr(self, name)
             else:
                 return default_value
+    def as_dict(self):
+        d = dict()
+        for key in self._keys:
+            v = getattr(self, key)
+            if isinstance(v, _KerviConfig):
+                d[key] = v.as_dict()
+            else:
+                d[key] = getattr(self, key)
+
+        return d
+        
+    def to_json(self):
+        return json.dumps(self.as_dict())
 
     @property
     def keys(self):

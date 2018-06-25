@@ -294,7 +294,7 @@ class ServoMotor(object):
     def adjust_center(self, value):
         self._adjust_center = value
 
-    def dynamic_value_changed(self, input, value):
+    def kervi_value_changed(self, input, value):
         self.set_position(value)
 
     def set_position(self, position):

@@ -54,6 +54,22 @@ class NumberValue(KerviValue):
         self._ui_parameters["chart_interval"] = "5min"
         self._ui_parameters["chart_fill"] = True
         self._ui_parameters["chart_point"] = 0
+        if Configuration:
+            unit_system = Configuration.display.unit_systems.default
+            chart_time_format = Configuration.display.unit_systems.systems[unit_system].datetime.chart
+            self._ui_parameters["chart_time_format"] = chart_time_format
+        else:
+            self._ui_parameters["chart_time_format"] = {
+                "millisecond": "h:mm:ss.SSS",
+                "second": "h:mm:ss",
+                "minute": "h:mm",
+                "hour":   "h",
+                "day":    "MMM D",
+                "week":   "ll",
+                "month":  "MMM YYYY",
+                "quarter":"[Q]Q - YYYY",
+                "year":   "YYYY",
+            }
 
         self._ui_parameters["tick"] = 1.0
         self._ui_parameters["display_unit"] = True
@@ -343,9 +359,23 @@ class DateTimeValue(KerviValue):
     def value(self):
         """Current value of the component"""
         if self._value:
-            #print("dvx", datetime.strptime(self._value,'%Y-%m-%dT%H:%M:%SZ'))
             return datetime.strptime(self._value,'%Y-%m-%dT%H:%M:%SZ')
         return None
+
+    @property
+    def date(self):
+        """Current value of the component"""
+        if self._value:
+            return datetime.strptime(self._value[:10],'%Y-%m-%d')
+        return None
+
+    @property
+    def time(self):
+        """Current value of the component"""
+        if self._value:
+            return datetime.strptime(self._value[10:],'T%H:%M:%SZ')
+        return None
+
 
     @value.setter
     def value(self, new_value):
