@@ -121,11 +121,11 @@ class NumberValue(KerviValue):
 
         :type: ``str``
         """
-        return self._value_unit
+        return self._unit
 
     @unit.setter
     def unit(self, value):
-        self._value_unit = value
+        self._unit = value
 
     @property
     def type(self):
@@ -169,7 +169,7 @@ class NumberValue(KerviValue):
     def _get_info(self, **kwargs):
         return {
             "isInput":self.is_input,
-            "value_unit":self._unit,
+            "unit":self._unit,
             "value":self.value,
             "maxValue":self._max_value,
             "minValue":self._min_value,

@@ -21,6 +21,7 @@ setup(
         'kervi/core/utility',
         'kervi/core/version',
         'kervi/dashboards',
+        'kervi/displays',
         'kervi/hal',
         'kervi/sensors',
         'kervi/spine',

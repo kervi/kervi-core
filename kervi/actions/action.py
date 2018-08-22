@@ -1,6 +1,8 @@
 
 import inspect
 import threading
+import traceback
+import sys
 from kervi.spine import Spine
 from kervi.core.utility.component import KerviComponent
 
@@ -196,6 +198,8 @@ class Action(KerviComponent):
 
         except Exception as e:
             print("action failed:", self.action_id, e)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback.print_tb(exc_traceback, limit=10, file=sys.stdout)
             self._state = ACTION_FAILED
         self.spine.trigger_event("actionDone", self.action_id, self._state, result)
         self._last_result = result

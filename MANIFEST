@@ -20,6 +20,7 @@ kervi/core/utility\superformatter.py
 kervi/core/utility\thread.py
 kervi/core/version\__init__.py
 kervi/dashboards\__init__.py
+kervi/displays\__init__.py
 kervi/hal\__init__.py
 kervi/hal\gpio.py
 kervi/hal\i2c.py

@@ -130,7 +130,7 @@ class Controller(KerviComponent):
 
     def _on_app_ready(self, id):
         self._active = True
-        self.on_start()
+        self.controller_start()
 
     def _on_terminate(self, id):
         if self._active:
@@ -140,15 +140,15 @@ class Controller(KerviComponent):
             except:
                 pass
             finally:
-                self.exit()
+                self.controller_exit()
 
-    def exit(self):
+    def controller_exit(self):
         """
         Abstract method that is called when the kervi application stops.
         """
         pass
 
-    def on_start(self):
+    def controller_start(self):
         """
         Abstract method that is called when the entire application is loaded.
         """
