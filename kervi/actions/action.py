@@ -6,6 +6,7 @@ import sys
 from kervi.spine import Spine
 from kervi.core.utility.component import KerviComponent
 
+
 ACTION_STOPPED = "stopped"
 ACTION_RUNNING = "running"
 ACTION_SUCCESS = "success"
@@ -154,6 +155,8 @@ class Action(KerviComponent):
         self._last_result = None
         self._is_running = False
         self._interrupt = None
+        self._observers = []
+        self._spine_observers = {}
 
         self._ui_parameters = {
             "link_to_header": False,
@@ -356,6 +359,54 @@ class Action(KerviComponent):
             **kwargs
         )
 
+    def link_to(self, source, **kwargs):
+        """
+        Link this action to a kervi value. 
+        
+        :param source:
+            It is possible to make direct and indirect link.
+
+            If the type of the source parameter is of type KerviValue a direct link is created.
+            this is a fast link where the output can notify directly to input.
+            This type of link is possible if both value and action resides in the same process.
+
+            If the type of the source parameter is a string it is expected to hold the id of a another KerviValue.
+            In this mode the input value will listen on the kervi spine for events from the output value.
+            This mode is useful if the output and input does not exists in the same process.
+
+        :type source: ``str`` or ``KerviValue``
+
+        :Keyword Arguments:
+
+            * *pass_value* (``bool``) -- If true the linked value is passed as first parameter to action.
+            * *action_parameters* (``list``) -- List of parameters to pass to the action.
+            * *interrupt_enabled* (``bool``) -- If true the button will send interrupt to action on off. Default true if an interrupt is specified for the action.
+            * *interrupt_parameters* (``list``) -- List of parameters to pass to the interrupt function of the action.
+            
+
+        """
+        from kervi.values.kervi_value import KerviValue
+        if isinstance(source, KerviValue):
+            source.add_observer(self)
+            self._spine_observers[source.value_id] = kwargs
+            
+        elif isinstance(source, str):
+            if len(self._spine_observers) == 0:
+                self.spine.register_event_handler("valueChanged", self._link_changed_event)
+
+            self._spine_observers[source] = kwargs
+
+    def kervi_value_changed(self, source, value):
+        self._link_changed_event(source.value_id, {"id": source.value_id, "value": source.value}, value)
+    
+    def _link_changed_event(self, id, source, old_value):
+        if source["id"] in self._spine_observers.keys():
+            kwargs = self._spine_observers[source["id"]]
+            value = source["value"]
+            self._handle_link(value, **kwargs)
+
+    def _handle_link(self, value, **kwargs):
+        print("hl", value, kwargs)
 
     def set_interrupt(self, method=None, **kwargs):
         """
