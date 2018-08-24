@@ -133,6 +133,7 @@ class Controller(KerviComponent):
         self.controller_start()
 
     def _on_terminate(self, id):
+        
         if self._active:
             self._active = False
             try:

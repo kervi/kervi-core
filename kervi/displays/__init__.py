@@ -72,7 +72,7 @@ class Display(Controller):
         self.text = self.inputs.add("text", "Text", StringValue)
         self._bitmap = None
         self._display_active = False
-        self._line_height = 32
+        self._line_height = 0
         self._font = None
         self._background_color=(0)
         self._text_color = (255)
@@ -80,6 +80,7 @@ class Display(Controller):
         self._active_page = None
         self._page_change_speed = 5
         self._page_timer = None
+        self._bitmap_lock = threading.Lock()
     
     def add_page(self, page, default = True):
         r"""
@@ -174,14 +175,10 @@ class Display(Controller):
         self._display_active = state
         self._device.enable_display(self._display_active)
 
-    
-
-
     @display_active.set_interrupt
     def display_active_interupt(self):
         self._display_active = False
         self._device.enable_display(self._display_active)
-
 
     @action
     def activate_page_scroll(self):
@@ -204,7 +201,7 @@ class Display(Controller):
     def scroll_h(self):
         pass
 
-    def _get_font(self, name="SourceSansVariable-Roman", size=16):
+    def _get_font(self, size=8, name="PressStart2P.ttf"):
         """
         Returns a font that can be used by pil image functions.
         This default font is "SourceSansVariable-Roman" that is available on all platforms.
@@ -212,10 +209,9 @@ class Display(Controller):
         import kervi.vision as vision
         from PIL import ImageFont
         vision_path = os.path.dirname(vision.__file__)
-        fontpath = os.path.join(vision_path, "fonts", name + ".otf")
-        font = ImageFont.truetype(fontpath, self.line_height)
+        fontpath = os.path.join(vision_path, "fonts", name)
+        font = ImageFont.truetype(fontpath, size)
         return font
-
     
     def _page_changed(self, changed_page):
         if self._active_page == changed_page:
@@ -226,12 +222,27 @@ class Display(Controller):
             if self._device.display_type == "char":
                 self._device.message(self.text.value)
             else:
+                line_count = len(self.text.value.split("\n"))
+                line_height = self._line_height
+                if line_height == 0:
+                    line_height = int(self._device.height / line_count )
+                    if line_height < 16:
+                        line_height = 8
+                #print("l", line_height, line_count, self._device.height)
+                if line_height == 8:
+                    font = self._get_font(line_height, "PixelOperatorMono8-Bold.ttf")
+                else:
+                    font = self._get_font(line_height, "PixelOperatorMono-Bold.ttf")
                 image = Image.new('1', size=(self._device.width, self._device.height), color=self._background_color)
                 draw = ImageDraw.Draw(image)
                 #draw.text((0, 0), self.text.value, font=self.font, fill=self._text_color)
-                draw.multiline_text((0, 0), self.text.value, font=self.font, fill=self._text_color, spacing=2)
-                self._device.image(image)
-                self._device.display()
+                draw.multiline_text((0, 0), self.text.value, font=font, fill=self._text_color, spacing=2)
+                self._bitmap_lock.acquire()
+                try:
+                    self._device.image(image)
+                    self._device.display()
+                finally:
+                    self._bitmap_lock.release()
                 
     def controller_start(self):
         if self._active_page:
@@ -257,11 +268,15 @@ class DisplayPage(Controller):
         self._links = {}
         self._displays = []
         self._text = None
+        self._lines = 1
 
     def _add_display(self, display):
         self._displays.append(display)
     
-   
+    @property
+    def line_count(self):
+        return self._lines
+
     @property
     def text(self):
         return self._text
@@ -277,6 +292,7 @@ class DisplayPage(Controller):
     @template.setter
     def template(self, value):
         self._template = value
+        self._lines = len(self._template.split("\n"))
     
     def _render(self):
         kwargs = {}
@@ -287,9 +303,9 @@ class DisplayPage(Controller):
         for display in self._displays:
             display._page_changed(self) 
     
-    def _transform(self, v, format):
-        if format:
-            return str.format(v, format)
+    def _transform(self, v, value_format):
+        if value_format:
+            return str.format("{:" + value_format + "}", v)
         else:
             return str(v)
     
