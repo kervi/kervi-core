@@ -245,14 +245,20 @@ class KerviValue(KerviComponent):
 
             old_value = self.value
             self._value = nvalue
-            self.value_changed(nvalue, old_value)
-
+            try:
+                self.value_changed(nvalue, old_value)
+            except Exception as Ex:
+                print("Error in value changed", Ex)
+            
             for observer in self._observers:
-                item, transformation = observer
-                if transformation:
-                    item.kervi_value_changed(self, transformation(nvalue))
-                else:
-                    item.kervi_value_changed(self, nvalue)
+                try:
+                    item, transformation = observer
+                    if transformation:
+                        item.kervi_value_changed(self, transformation(nvalue))
+                    else:
+                        item.kervi_value_changed(self, nvalue)
+                except Exception:
+                    print("error in value observer:")
 
             self._check_value_events(nvalue, old_value)
 
