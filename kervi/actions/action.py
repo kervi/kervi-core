@@ -267,7 +267,7 @@ class Action(KerviComponent):
             return self._last_result
 
     def interrupt(self, *args, **kwargs):
-        print("interrupt; ", self.action_id)
+        #print("interrupt; ", self.action_id)
         if self._interrupt:
             self._interrupt(*args, **kwargs)
 
@@ -379,6 +379,8 @@ class Action(KerviComponent):
         :Keyword Arguments:
 
             * *pass_value* (``bool``) -- If true the linked value is passed as first parameter to action.
+            * *trigger_value* (````) -- Value of source that will trigger action.
+            * *trigger_interrupt_value* (````) -- Value of source that will trigger interrupt.
             * *action_parameters* (``list``) -- List of parameters to pass to the action.
             * *interrupt_enabled* (``bool``) -- If true the button will send interrupt to action on off. Default true if an interrupt is specified for the action.
             * *interrupt_parameters* (``list``) -- List of parameters to pass to the interrupt function of the action.
@@ -403,11 +405,23 @@ class Action(KerviComponent):
         if source["id"] in self._spine_observers.keys():
             kwargs = self._spine_observers[source["id"]]
             value = source["value"]
-            self._handle_link(value, **kwargs)
+            self._handle_link_event(value, **kwargs)
 
-    def _handle_link(self, value, **kwargs):
-        print("hl", value, kwargs)
+    def _handle_link_event(self, value, **kwargs):
+        pass_value = kwargs.pop("pass_value", False)
+        
+        trigger_value = kwargs.pop("trigger_value", True)
+        trigger_interrupt_value = kwargs.pop("trigger_interrupt_value", False)
+        action_parameters = kwargs.pop("action_parameters", [])
+        interrupt_parameters = kwargs.pop("interrupt_parameters", [])
 
+        if pass_value:
+            action_parameters = [value] + action_parameters
+        if trigger_value == value:
+            self.execute(*action_parameters, run_async=True)
+        elif trigger_interrupt_value == value:
+            self.interrupt(*interrupt_parameters)
+        
     def set_interrupt(self, method=None, **kwargs):
         """
             Decorator that turns a function or controller method into an action interrupt.
