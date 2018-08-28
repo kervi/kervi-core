@@ -394,7 +394,6 @@ class Action(KerviComponent):
             self._spine_observers[source.value_id] = kwargs
             
         elif isinstance(source, str):
-            print("xxx", self._spine_observers.keys())
             self.spine.register_event_handler("valueChanged", self._link_changed_event, source)
 
             self._spine_observers[source] = kwargs
