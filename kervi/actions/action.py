@@ -3,6 +3,7 @@ import inspect
 import threading
 import traceback
 import sys
+import types
 from kervi.spine import Spine
 from kervi.core.utility.component import KerviComponent
 
@@ -393,8 +394,8 @@ class Action(KerviComponent):
             self._spine_observers[source.value_id] = kwargs
             
         elif isinstance(source, str):
-            if len(self._spine_observers) == 0:
-                self.spine.register_event_handler("valueChanged", self._link_changed_event)
+            print("xxx", self._spine_observers.keys())
+            self.spine.register_event_handler("valueChanged", self._link_changed_event, source)
 
             self._spine_observers[source] = kwargs
 
@@ -417,9 +418,13 @@ class Action(KerviComponent):
 
         if pass_value:
             action_parameters = [value] + action_parameters
-        if trigger_value == value:
+        if isinstance(trigger_value, types.LambdaType) and trigger_value(value) and not self.is_running:
+            self.execute(*action_parameters, run_async=True)    
+        if isinstance(trigger_interrupt_value, types.LambdaType) and trigger_interrupt_value(value) and self.is_running:
+            self.interrupt(*interrupt_parameters)    
+        elif trigger_value == value and not self.is_running:
             self.execute(*action_parameters, run_async=True)
-        elif trigger_interrupt_value == value:
+        elif trigger_interrupt_value == value and self.is_running:
             self.interrupt(*interrupt_parameters)
         
     def set_interrupt(self, method=None, **kwargs):
