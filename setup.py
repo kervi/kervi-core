@@ -25,6 +25,7 @@ setup(
         'kervi/hal',
         'kervi/sensors',
         'kervi/spine',
+        'kervi/user_input',
         'kervi/values'
     ],
     version=VERSION,
