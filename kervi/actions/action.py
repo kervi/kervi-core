@@ -27,6 +27,8 @@ class _LinkedAction(object):
         self._process_locked = False
         self._is_running = False
         self._last_result = None
+        self._observers = []
+        self._spine_observers = {}
 
     
     def _get_component_bus_routes(self):
@@ -115,6 +117,46 @@ class _LinkedAction(object):
     def __call__(self, *args, **kwargs):
         self.execute(*args, **kwargs)
 
+
+    def link_to(self, source, **kwargs):
+        from kervi.values.kervi_value import KerviValue
+        if isinstance(source, KerviValue):
+            source.add_observer(self)
+            self._spine_observers[source.value_id] = kwargs
+            
+        elif isinstance(source, str):
+            self.spine.register_event_handler("valueChanged", self._link_changed_event, source)
+            self._spine_observers[source] = kwargs
+
+    def kervi_value_changed(self, source, value):
+        self._link_changed_event(source.value_id, {"id": source.value_id, "value": source.value}, value)
+    
+    def _link_changed_event(self, id, source, old_value):
+        if source["id"] in self._spine_observers.keys():
+            kwargs = self._spine_observers[source["id"]]
+            value = source["value"]
+            self._handle_link_event(value, **kwargs)
+
+    def _handle_link_event(self, value, **kwargs):
+        pass_value = kwargs.pop("pass_value", False)
+        
+        trigger_value = kwargs.pop("trigger_value", True)
+        trigger_interrupt_value = kwargs.pop("trigger_interrupt_value", False)
+        action_parameters = kwargs.pop("action_parameters", [])
+        interrupt_parameters = kwargs.pop("interrupt_parameters", [])
+
+        if pass_value:
+            action_parameters = [value] + action_parameters
+        if isinstance(trigger_value, types.LambdaType) and trigger_value(value) and not self.is_running:
+            self.execute(*action_parameters, run_async=True)    
+        if isinstance(trigger_interrupt_value, types.LambdaType) and trigger_interrupt_value(value) and self.is_running:
+            self.interrupt(*interrupt_parameters)    
+        elif trigger_value == value and not self.is_running:
+            self.execute(*action_parameters, run_async=True)
+        elif trigger_interrupt_value == value and self.is_running:
+            self.interrupt(*interrupt_parameters)
+    
+
 class _ActionThread(threading.Thread):
     def __init__(self, action, args, kwargs):
         super().__init__()
@@ -145,6 +187,7 @@ class Action(KerviComponent):
         super().__init__(action_id, "KerviAction", name)
         self.action_id = action_id
         self._handler = handler
+        self._handler.__globals__["exit_action"] = False
         argspec = inspect.getargspec(handler)
         self._keywords = argspec.keywords != None
         #print("kw", self.action_id, self._keywords, argspec, handler)
@@ -158,7 +201,7 @@ class Action(KerviComponent):
         self._interrupt = None
         self._observers = []
         self._spine_observers = {}
-
+        
         self._ui_parameters = {
             "link_to_header": False,
             "label_icon": None,
@@ -192,6 +235,7 @@ class Action(KerviComponent):
         kwargs.pop("injected", None) # signaling from zmq bus
         self._state = ACTION_RUNNING
         self._is_running = True
+        self._handler.__globals__["exit_action"] = False
         result = None
         try:
             if self._keywords:
@@ -232,9 +276,7 @@ class Action(KerviComponent):
 
             my_action("x")
 
-            :Keyword Arguments:
-
-            * *link_to_header* (``str``) -- Link this action to the header of the panel.
+            
          """
 
         timeout = kwargs.pop("timeout", -1)
@@ -268,9 +310,11 @@ class Action(KerviComponent):
             return self._last_result
 
     def interrupt(self, *args, **kwargs):
-        #print("interrupt; ", self.action_id)
         if self._interrupt:
             self._interrupt(*args, **kwargs)
+        else:
+            self._handler.__globals__["exit_action"] = True
+        
 
     @property
     def is_running(self):
