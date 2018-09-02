@@ -29,6 +29,7 @@ kervi/hal\one_wire.py
 kervi/sensors\__init__.py
 kervi/sensors\sensor.py
 kervi/spine\__init__.py
+kervi/user_input\__init__.py
 kervi/values\__init__.py
 kervi/values\kervi_value.py
 kervi/values\value_list.py

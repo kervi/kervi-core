@@ -39,7 +39,7 @@ CHANNEL_TYPE_GPIO = 3
 
 class LogicIOChannel(BooleanValue):
     def __init__(self, gpio_device, channel):
-        BooleanValue.__init__(self, gpio_device.name +" " + str(channel), input_id=str(channel))
+        BooleanValue.__init__(self, gpio_device.device_name +" " + str(channel), input_id=str(channel))
         self._device = gpio_device
         self._channel = channel
 

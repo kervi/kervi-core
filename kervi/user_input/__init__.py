@@ -1,8 +1,8 @@
 
 import threading
-import inputs
 from kervi.controllers.controller import Controller
 from kervi.values import NumberValue, StringValue
+import kervi.hal as hal
 
 class _InputThread(threading.Thread):
     def __init__(self, controller, device):
@@ -37,22 +37,23 @@ class UserInput(Controller):
         listen_to_keyboard = kwargs.pop("listen_to_keyboard", False)
         listen_to_mouse = kwargs.pop("listen_to_mouse", False)
         listen_to_gamepad = kwargs.pop("listen_to_gamepad", True)
+        self._devices = hal.get_user_inputs()
         self._keyboard_thread = None
         self._mouse_thread = None
         self._gamepad_thread = None
         if listen_to_keyboard:
-            if len(inputs.devices.keyboards):
-                self._keyboard_thread = _InputThread(self, inputs.devices.keyboards[0])
+            if len(self._devices.keyboards):
+                self._keyboard_thread = _InputThread(self, self._devices.keyboards[0])
             else:
                 print("no keyboards found")
         if listen_to_mouse:
-            if len(inputs.devices.mice):
-                self._mouse_thread = _InputThread(self, inputs.devices.mice[0])
+            if len(self._devices.mice):
+                self._mouse_thread = _InputThread(self, self._devices.mice[0])
             else:
                 print("no mouse found")
         if listen_to_gamepad:
-            if len(inputs.devices.gamepads):
-                self._gamepad_thread = _InputThread(self, inputs.devices.gamepads[0])
+            if len(self._devices.gamepads):
+                self._gamepad_thread = _InputThread(self, self._devices.gamepads[0])
             else:
                 print("no gamepads found")
         self.key = self.outputs.add("key", "Key", StringValue)
@@ -62,7 +63,7 @@ class UserInput(Controller):
 
         self._key_map = {}
 
-        self._ctrl_keys = ["KEY_LEFTCTRL", "KEY_LEFTMETA", "KEY_LEFTSHIFT"]
+        self._ctrl_keys = ["KEY_LEFTCTRL", "KEY_LEFTMETA", "KEY_LEFTSHIFT", "KEY_RIGHTCTRL", "KEY_RIGNTMETA", "KEY_RIGHTSHIFT"]
 
     def _get_key(self, key):
         if key in self._key_map.keys():
@@ -104,7 +105,7 @@ class UserInput(Controller):
             return
         if event.ev_type == "Misc":
             return
-        print("event", event.code, event.state, event.timestamp, event.ev_type)
+        #print("event", event.code, event.state, event.timestamp, event.ev_type)
         if event.ev_type == "Relative":
             if event.code == "REL_WHEEL":
                 self.mouse_wheel.value += event.state

@@ -53,7 +53,8 @@ def _load():
                 GPIO = get_gpio()
                 return driver_name
 
-
+def get_user_inputs():
+    return _DRIVER.get_user_inputs()
 
 def detect_devices():
     devices = _DRIVER.detect_devices()
@@ -121,10 +122,6 @@ class SensorDeviceDriver(object):
     @property
     def logger(self):
         return Spine().log
-
-    @property
-    def extended_value(self):
-        return False
 
 class I2CaddressOutOfBoundsError(Exception):
     def __init__(self, device_name, address):

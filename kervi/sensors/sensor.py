@@ -205,10 +205,7 @@ class Sensor(NumberValue):
             self._set_value(sensor_value)
 
     def _read_sensor(self):
-        if self._device.extented_value:
-            self._new_sensor_reading(self._device.read_extended_value())
-        else:
-            self._new_sensor_reading(self._device.read_value())
+        self._new_sensor_reading(self._device.read_value())
 
 class _SensorThread(KerviThread):
     r"""
