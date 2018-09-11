@@ -26,14 +26,15 @@ The second part is the Sensor class that reads a sensor device and triggers even
 """
 
 import time
+from kervi.controllers.controller import Controller
 from kervi.core.utility.thread import KerviThread
 from kervi.spine import Spine
-from kervi.core.utility.component import KerviComponent
-from kervi.values import NumberValue
+from kervi.values import NumberValue, ColorValue, KerviValue
 from kervi.config import Configuration
+from kervi.actions import action
 #from kervi.settings import Settings
 
-class Sensor(NumberValue):
+class Sensor(Controller):
     r"""
     Sensor is a class that exposes a sensor device as a dynamic value.
     The Sensor class polls the associated sensor device and updates it self when
@@ -61,38 +62,49 @@ class Sensor(NumberValue):
 
     """
     def __init__(self, sensor_id, name, device=None, **kwargs):
-        NumberValue.__init__(self, name, value_id=sensor_id, is_input=False, **kwargs)
+        #KerviComponent.__init__(self, sensor_id, "sensor", name, **kwargs)
+        Controller.__init__(self, sensor_id, name)
+        if device.value_type == "color":
+            self._sensor_value = self.outputs.add("value", name, ColorValue)
+        elif device.value_type == "number":
+            self._sensor_value = self.outputs.add(sensor_id, name, NumberValue)
+        else:
+            raise ValueError("Can not handle device value type: " + str(device.value_type))
+
         self._device = device
-        self._component_type = "sensor"
         self._sub_sensors = []
         self._dimensions = 1
+        self._index = kwargs.pop("index", -1)
+        self._enabled = None
+        
         if self._device:
             self.value_type = self._device.type
             self.value_unit = self._device.unit
-            self.min = self._device.min
-            self.max = self._device.max
-            self._dimensions = self._device.dimensions
-            self._dimension_labels = self._device.dimension_labels
-            if self._dimensions > 1:
-                count = 0
-                for label in self._dimension_labels:
-                    sub_sensor = Sensor(
-                            self.component_id + "." + label,
-                            label,
-                            use_thread=False,
-                            parent=self,
-                            index=count,
-                            **kwargs
-                        )
-                    sub_sensor.value_unit = self.value_unit
-                    self._sub_sensors += [
-                        sub_sensor
-                    ]
-                    count += 1
-
-        self._ui_parameters["type"] = "value"
-        self._ui_parameters["show_value"] = True
-        self._ui_parameters["show_sparkline"] = True
+            print("mm", self._device.min, self._device.max)
+            self._sensor_value.min = self._device.min
+            self._sensor_value.max = self._device.max
+            if self._index == -1:
+                self._dimensions = self._device.dimensions
+                self._dimension_labels = self._device.dimension_labels
+        
+        if self._dimensions > 1:
+            count = 0
+            for label in self._dimension_labels:
+                sub_sensor = Sensor(
+                        self.component_id + "." + label,
+                        label,
+                        self._device,
+                        use_thread=False,
+                        #parent=self,
+                        index=count,
+                        **kwargs
+                    )
+                sub_sensor.value_unit = self.value_unit
+                self._sub_sensors += [
+                    sub_sensor
+                ]
+                count += 1
+        
         if kwargs.get("use_thread", True):
             self._sensor_thread = _SensorThread(self, kwargs.get("polling_interval", 1))
         else:
@@ -102,6 +114,17 @@ class Sensor(NumberValue):
         if self._dimensions == 1:
             return self
         return self._sub_sensors[sub_sensor]
+
+    @property
+    def enabled(self):
+        return self._enabled == True
+
+    @enabled.setter
+    def enabled(self, value):
+        self._enabled = value
+        if self._dimensions > 1:
+            for dimension in range(0, self._dimensions):
+                self._sub_sensors[dimension].enable = value
 
     @property
     def polling_interval(self):
@@ -170,25 +193,42 @@ class Sensor(NumberValue):
             * **label** (``str``) -- Label to show default is the name of the sensor.
         """
 
-        KerviComponent.link_to_dashboard(self, dashboard_id, panel_id, **kwargs)
-
-    def _get_info(self, **kwargs):
-        dimensions = []
-        if self._dimensions > 1:
+        if self._dimensions == 1:
+            self._sensor_value.link_to_dashboard(dashboard_id, panel_id, **kwargs)
+        else:
             for dimension in range(0, self._dimensions):
-                dimensions += [self._sub_sensors[dimension]._get_component_info()]
-        return {
-            "type":self._type,
-            "subSensors": dimensions,
-            "isInput": False,
-            "maxValue":self.max,
-            "minValue":self.min,
-            "unit":self.value_unit,
-            "value":self._value,
-            "ranges":self._event_ranges,
-            "sparkline":self._sparkline
-        }
+                self._sub_sensors[dimension].link_to_dashboard(dashboard_id, panel_id, **kwargs)
 
+    # def _get_info(self, **kwargs):
+    #     dimensions = []
+    #     if self._dimensions > 1:
+    #         for dimension in range(0, self._dimensions):
+    #             dimensions += [self._sub_sensors[dimension]._get_component_info()]
+    #     return {
+    #         "type":self._sensor_value._type,
+    #         "subSensors": dimensions,
+    #         "isInput": False,
+    #         "maxValue":self.max,
+    #         "minValue":self.min,
+    #         "unit":self.value_unit,
+    #         "value":self._sensor_value._value,
+    #         "value_type": self._device.value_type,
+    #         "ranges":self._sensor_value._event_ranges,
+    #         "sparkline":self._sensor_value._sparkline
+    #     }
+
+    @action
+    def enable(self, state=True):
+        self.enabled = state
+    
+    @enable.set_interrupt
+    def enable_interrupt(self):
+        self.enabled = False
+    
+    def controller_start(self):
+        if self._enabled == None:
+            self.enabled = True
+    
     def _new_sensor_reading(self, sensor_value):
         """
         Call this method to signal a new sensor reading.
@@ -197,15 +237,144 @@ class Sensor(NumberValue):
         :param value:
             New value to be stored in the system.
         """
+        if not self._active and not self._enabled:
+            return
+
         if self._dimensions > 1:
             for dimension in range(0, self._dimensions):
                 value = sensor_value[dimension]
                 self._sub_sensors[dimension]._new_sensor_reading(value)
         else:
-            self._set_value(sensor_value)
-
+            self._sensor_value.value = sensor_value
+            
     def _read_sensor(self):
         self._new_sensor_reading(self._device.read_value())
+
+    @property
+    def log_values(self):
+        """
+        Set to true if the values should be logged to DB.
+        If false Kervi will hold a small cache in memory
+        for the last reading to be used in sparklines and real time charts.
+        """
+        return self._sensor_value._log_values
+
+    @log_values.setter
+    def log_values(self, value):
+        self._sensor_value._log_values = value
+
+    @property
+    def persist_value(self):
+        """
+        Set to true if the current value should be saved to db when the Kervi application or module exits.
+        The value will be restored upon application or module start. 
+        """
+        return self._sensor_value._persist_value
+
+    @persist_value.setter
+    def persist_value(self, do_persist):
+        self._sensor_value.persist_value = do_persist
+
+    def add_value_event(self, event_value, func, event_type=None, parameters=None, **kwargs):
+        """
+        Add a function that is called when the value reach or pass the event_value.
+
+        :param event_value:
+            A single value or range specified as a tuple.
+
+            If it is a range the function specified in func is called when the value enters the range.
+
+        :type event_value: ``float``, ``string``, ``boolean`` or a tuple of these types.
+
+        :param func:
+            Function or lambda expression to be called.
+            This function will receive the dynamcic value as a parameter.
+
+        :param event_type:
+            String with the value "warning" of "error" or None (default).
+            If warning or error is specified the value or range are shown in UI.
+
+        :type event_type: ``str``
+
+        """
+        self._sensor_value.add_value_event(event_value, func, event_type, parameters, **kwargs)
+    
+    def add_normal_range(self, value, message=None, func=None, **kwargs):
+        self._sensor_value.add_value_event(value, self._sensor_value._handle_range_event, parameters=[message, func, 3], **kwargs)
+
+    def add_warning_range(self, value, message=None, func=None, **kwargs):
+        self._sensor_value.add_value_event(value, self._sensor_value._handle_range_event, event_type="warning", parameters=[message, func, 2], **kwargs)
+
+    def add_error_range(self, value, message=None, func=None, **kwargs):
+        self._sensor_value.add_value_event(value, self._sensor_value._handle_range_event, event_type="error", parameters=[message, func, 1], **kwargs)
+
+    @property
+    def delta(self):
+        """
+        Enter how much a the value should change before it triggers changes events and updates links.
+        :type: ``float``
+        """
+        return self._sensor_value.delta
+
+    @delta.setter
+    def delta(self, value):
+        self._sensor_value.delta = value
+
+    @property
+    def max(self):
+        """
+        Maximum value.
+
+        :type: ``float``
+        """
+        return self._sensor_value.max_value
+
+    @max.setter
+    def max(self, value):
+        self._sensor_value.max_value = value
+
+    @property
+    def min(self):
+        """
+        Minimum value.
+
+        :type: ``float``
+        """
+        return self._sensor_value.min_value
+
+    @min.setter
+    def min(self, value):
+        self._sensor_value.min_value = value
+
+    @property
+    def unit(self):
+        """
+        Metric Unit of value.
+
+        :type: ``str``
+        """
+        return self._sensor_value.unit
+
+    @unit.setter
+    def unit(self, value):
+        self._sensor_value.unit = value
+
+    @property
+    def display_unit(self):
+        """
+        Display unit of value.
+
+        :type: ``str``
+        """
+        return self._sensor_value.display_unit
+
+    @display_unit.setter
+    def display_unit(self, value):
+        self._sensor_value.display_unit = value
+    
+
+
+
 
 class _SensorThread(KerviThread):
     r"""
