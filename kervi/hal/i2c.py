@@ -34,6 +34,10 @@ class II2CDeviceDriver(object):
     """
     """
 
+    @property
+    def value_type(self):
+        return "number"
+
     def reverse_byte_order(self, data):
         """Reverses the byte order of an int (16-bit) or long (32-bit) value."""
         # Courtesy Vishal Sapre

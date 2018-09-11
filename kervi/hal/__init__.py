@@ -123,6 +123,10 @@ class SensorDeviceDriver(object):
     def logger(self):
         return Spine().log
 
+    @property
+    def value_type(self):
+        return "number"
+
 class I2CaddressOutOfBoundsError(Exception):
     def __init__(self, device_name, address):
         super(I2CaddressOutOfBoundsError, self).__init__(
