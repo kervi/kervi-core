@@ -366,7 +366,6 @@ class KerviValue(KerviComponent):
         return ranges
 
     def _get_info(self, **kwargs):
-        
         return {
             "value":self.value,
             "command":self.command,
