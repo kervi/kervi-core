@@ -568,3 +568,113 @@ class EnumValue(KerviValue):
         #     self.component_id,
         #     {"select":self.component_id, "value":self.selected_options}
         # )
+
+
+class ColorValue(KerviValue):
+    """
+    A value that holds a rgb value.
+    When linked to a dashboard it is represented as a color button.
+    """
+    def __init__(self, name, **kwargs):
+        KerviValue.__init__(self, name, "color-value", **kwargs)
+        self._value = (255, 255, 255)
+        self._type = None
+        self._ui_parameters["type"] = "button"
+        self._ui_parameters["button_icon"] = None
+        self._ui_parameters["button_text"] = self.name,
+        self._ui_parameters["button_width"] = None
+        self._ui_parameters["button_height"] = None,
+        self._ui_parameters["input_size"] = 0
+
+    def _normalize_value(self, new_value):
+        if isinstance(new_value, str) and new_value[0]=="#":
+            #self._set_value(new_value)
+            KerviValue._set_value(self, new_value)
+        elif isinstance(new_value, list) and len(new_value)==3:
+            value = '#%02x%02x%02x' % (new_value[0], new_value[1], new_value[2])
+            KerviValue._set_value(self, value)
+            #self._set_value(value)
+        elif isinstance(new_value, tuple) and len(new_value):
+            value = '#%02x%02x%02x' % new_value
+            KerviValue._set_value(self, value)
+        else:
+            raise ValueError("invalid color value:" + str(new_value))
+
+    def _set_value(self, new_value):
+        if isinstance(new_value, str) and new_value[0]=="#":
+            #self._set_value(new_value)
+            KerviValue._set_value(self, new_value)
+        elif isinstance(new_value, list) and len(new_value)==3:
+            value = '#%02x%02x%02x' % (new_value[0], new_value[1], new_value[2])
+            KerviValue._set_value(self, value)
+            #self._set_value(value)
+        elif isinstance(new_value, tuple) and len(new_value):
+            value = '#%02x%02x%02x' % new_value
+            KerviValue._set_value(self, value)
+        else:
+            raise ValueError("invalid color value:" + str(new_value))
+    
+    @property
+    def value(self):
+        return self._value
+    
+    @value.setter
+    def value(self, new_value):
+        """
+        Updates the value.
+        If the change exceeds the change delta observers and linked values are notified.  
+        """
+        self._normalize_value(new_value)
+    
+    @property
+    def rgb(self):
+        """retuns the color value as rgb tuple"""
+        return tuple(int(self.value[i:i+2], 16) for i in (0, 2 ,4))
+
+    
+    def link_to_dashboard(self, dashboard_id=None, panel_id=None, **kwargs):
+        r"""
+        Links this value to a dashboard panel.
+
+        :param dashboard_id:
+            Id of the dashboard to link to.
+        :type dashboard_id: str
+
+        :param panel_id:
+            Id of the panel on the dashboard to link to.
+        :type panel_id: str
+
+
+        :param \**kwargs:
+            Use the kwargs below to override default values for ui parameters
+
+        :Keyword Arguments:
+            
+            * *link_to_header* (``str``) -- Link this value to the header of the panel.
+
+            * *label_icon* (``str``) -- Icon that should be displayed together with label.
+
+            * *label* (``str``) -- Label text, default value is the name of the value.
+
+            * *flat* (``bool``) -- Flat look and feel.
+
+            * *inline* (``bool``) -- Display value and label in its actual size
+                If you set inline to true the size parameter is ignored.
+                The value will only occupy as much space as the label and input takes.
+
+            * *input_size* (``int``) -- width of the slider as a percentage of the total container it sits in.
+
+            * *value_size* (``int``) -- width of the value area as a percentage of the total container it sits in.
+
+            * *type* (``string``) -- 'button' or 'input'.
+
+            
+            * *button_icon* (``string``) -- Icon to display on button.
+            * *button_text* (``string``) -- Text to display on button, default is name.
+        """
+        KerviComponent.link_to_dashboard(
+            self,
+            dashboard_id,
+            panel_id,
+            **kwargs
+        )
