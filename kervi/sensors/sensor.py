@@ -80,7 +80,6 @@ class Sensor(Controller):
         if self._device:
             self.value_type = self._device.type
             self.value_unit = self._device.unit
-            print("mm", self._device.min, self._device.max)
             self._sensor_value.min = self._device.min
             self._sensor_value.max = self._device.max
             if self._index == -1:

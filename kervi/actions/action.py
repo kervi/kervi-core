@@ -159,7 +159,7 @@ class _LinkedAction(object):
 
 class _ActionThread(threading.Thread):
     def __init__(self, action, args, kwargs):
-        super().__init__()
+        super().__init__(name="_ActionThread:"+action.action_id)
         self._action = action
         self.deamon = True
         self._args = args
@@ -167,7 +167,9 @@ class _ActionThread(threading.Thread):
         self.result = None
 
     def run(self):
+        print("run", self._action.action_id)
         self.result = self._action._execute(*self._args, **self._kwargs)
+        print("run exit", self._action.action_id)
 
 class _ActionInterrupt():
     def __init__(self, interrupt):

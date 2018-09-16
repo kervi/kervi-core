@@ -43,6 +43,7 @@ import kervi.core.utility.kervi_logging as k_logging
 
 class _KerviProcess(object):
     def __init__(self, scope, name, config, ipcPort, root_close, **kwargs):
+        print("process", scope, name)
         process_id = groups = kwargs.get("process_id", name)
         self.name = name
         self._do_terminate = False
@@ -51,10 +52,10 @@ class _KerviProcess(object):
         self.config = config
         self.spine = self.load_spine(name, ipcPort, "tcp://" + config.network.ipc_root_address + ":" + str(config.network.ipc_root_port), config.network.ip)
         spine.set_spine(self.spine)
-        self.spine.register_command_handler("terminateProcess", self.terminate, scope=scope)
+        self.spine.register_command_handler("terminateProcess", self.terminate, scopes=[scope])
         self.spine.register_query_handler("getProcessInfo", self.get_process_info)
         self.init_process()
-        self.spine.send_command("startThreads", scope="process")
+        self.spine.send_command("startThreads", local_only=True)
 
     def __del__(self):
         #print("pd", self.name)
@@ -71,9 +72,8 @@ class _KerviProcess(object):
         return self.spine.root_gone or self._do_terminate
 
     def terminate(self):
-        print("terminate process", self.name)
+        #print("terminate process", self.name)
         self.spine.log.debug("do terminate:{0}", self.port)
-        #print("terminate:", self.port)
         self._do_terminate = True
 
     def init_process(self):
@@ -81,7 +81,7 @@ class _KerviProcess(object):
 
     def _terminate_process(self):
         self.terminate_process()
-        self.spine.trigger_event("processTerminating", None, scope="process")
+        self.spine.trigger_event("processTerminating", None, local_only=True)
         #time.sleep(5)
         #self.process_spine.close_all_connections()
         self.spine.log.info("process terminated:{0}", self.port)
@@ -125,4 +125,4 @@ def _start_process(scope, name, config, port_idx, process_class, root_close=True
     return process
 
 def _stop_processes(scope):
-    spine.Spine().send_command("terminateProcess", scope=scope)
+    spine.Spine().send_command("terminateProcess", scope=[scope])

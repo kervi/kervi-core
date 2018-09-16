@@ -35,7 +35,7 @@ class KerviThread(threading.Thread):
         .. document private functions
         .. automethod:: _step
         """
-        threading.Thread.__init__(self)
+        threading.Thread.__init__(self, name="KerviThread")
         self.daemon = True
         self.terminate = False
 

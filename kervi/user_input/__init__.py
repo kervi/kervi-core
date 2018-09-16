@@ -6,7 +6,7 @@ import kervi.hal as hal
 
 class _InputThread(threading.Thread):
     def __init__(self, controller, device):
-        super().__init__()
+        super().__init__(Name="InputThread")
         self._controller = controller
         self.deamon = True
         self._terminate = False

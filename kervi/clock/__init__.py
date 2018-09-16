@@ -31,5 +31,5 @@ class Clock(Controller):
     def _tick(self):
         now = datetime.datetime.utcnow()
         self.time.value = now
-        if self.date.value != now
+        if self.date.value != now:
             self.date.value = now

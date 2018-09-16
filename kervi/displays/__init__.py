@@ -33,7 +33,7 @@ from PIL import Image, ImageDraw
 
 class _PageTimer(threading.Thread):
     def __init__(self, display):
-        threading.Thread.__init__(self)
+        threading.Thread.__init__(self, name="pageTimer")
         self.deamon = True
         self._display = display
         self._terminated = False
