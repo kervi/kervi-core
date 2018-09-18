@@ -26,9 +26,11 @@ from kervi.hal import gpio
 #from kervi.hal import one_wire
 from kervi.spine import Spine
 from kervi.core.utility.thread import KerviThread
-import pip
+#import pip
+from pluginbase import PluginBase
 import importlib
-
+import os
+import kervi.utility
 _DRIVER = None
 GPIO = None
 
@@ -38,7 +40,20 @@ def _load():
     global GPIO, _DRIVER, HAL_DRIVER_ID
 
     if not _DRIVER:
-        installed_packages = pip.get_installed_distributions()
+        #installed_packages = pip.get_installed_distributions()
+        #kervi_path = os.path.dirname(kervi.utility.__file__)
+        #kervi_path = kervi_path[:-8]
+        #print("kp", kervi_path )
+        #plugin_base = PluginBase(package='kervi.platform.plugins')
+        #plugin_source = plugin_base.make_plugin_source(
+        #    searchpath=[ kervi_path + "/platforms"]
+        #)
+
+        import pkg_resources
+        installed_packages = pkg_resources.working_set
+
+        #plugin_list = plugin_source.list_plugins()
+        #print("pl", plugin_list)
         flat_installed_packages = [package.project_name for package in installed_packages]
         known_drivers = [
             ("kervi-hal-win", "kervi.platforms.windows"),

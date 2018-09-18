@@ -54,7 +54,7 @@ class _KerviProcess(object):
         spine.set_spine(self.spine)
         self.spine.register_command_handler("terminateProcess", self.terminate, scopes=[scope])
         self.spine.register_query_handler("getProcessInfo", self.get_process_info)
-        self.init_process()
+        self.init_process(**kwargs)
         self.spine.send_command("startThreads", local_only=True)
 
     def __del__(self):
@@ -76,7 +76,7 @@ class _KerviProcess(object):
         self.spine.log.debug("do terminate:{0}", self.port)
         self._do_terminate = True
 
-    def init_process(self):
+    def init_process(self, **kwargs):
         self.spine.log.error("abstract init_process called in KerviProcess")
 
     def _terminate_process(self):

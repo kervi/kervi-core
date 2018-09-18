@@ -1,15 +1,14 @@
 Metadata-Version: 1.1
 Name: kervi-core
-Version: 0.13.34
+Version: 0.15.64
 Summary: 
-    Core components for the Kervi framework .
+    Core components for the Kervi framework.
     
 Home-page: https://github.com/kervi/kervi-core
 Author: Tim Wentzlau
 Author-email: tim.wentzlau@gmail.com
 License: UNKNOWN
 Download-URL: https://github.com/kervi/kervi/archive/v1.0-alpha.tar.gz
-Description-Content-Type: UNKNOWN
 Description: UNKNOWN
 Keywords: raspberry pi,robotic,automation
 Platform: UNKNOWN
