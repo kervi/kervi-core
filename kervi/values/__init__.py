@@ -48,6 +48,7 @@ class NumberValue(KerviValue):
         self._ui_parameters["min_fraction_digits"] = 1
         self._ui_parameters["max_fraction_digits"] = 1
         self._ui_parameters["show_sparkline"] = False
+        self._ui_parameters["show_value"] = True
         self._ui_parameters["pad_auto_center"] = False
         self._ui_parameters["chart_buttons"] = True
         self._ui_parameters["chart_grid"] = True
