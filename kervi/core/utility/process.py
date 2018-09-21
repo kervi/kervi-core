@@ -28,23 +28,10 @@ import kervi.spine as spine
 #import sys
 import kervi.core.utility.kervi_logging as k_logging
 
-
-#MAIN_SPINE = None
-# def _start_root_spine(config, reset_log=False, spine_class):
-#     global MAIN_SPINE
-#     k_logging.init_process_logging("kervi-main", config.log)
-#     k_logging.KerviLog("kervi main")
-    
-#     spine._init_spine("kervi-main", config.network.ipc_root_port, None, config.network.ipc_root_address, spine_class)
-
-# def _stop_root_spine():
-#     #MAIN_SPINE.close_all_connections()
-#     pass
-
 class _KerviProcess(object):
     def __init__(self, scope, name, config, ipcPort, root_close, **kwargs):
         print("process", scope, name)
-        process_id = groups = kwargs.get("process_id", name)
+        #process_id = groups = kwargs.get("process_id", name)
         self.name = name
         self._do_terminate = False
         self._is_connected = False
