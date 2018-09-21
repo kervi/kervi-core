@@ -316,12 +316,12 @@ class KerviValue(KerviComponent):
                 {message}
 
                 Value: {value}
-
-                Latest values
-                {sparkline:repeat: Time: {{item[timestamp}} value:{{"value"}}}
             '''
+            #    Latest values
+            #    {sparkline:repeat: Time: {{item[timestamp}} value:{{"value"}}}
+            #'''
 
-            body = None #sf.format(body_template, message=message, value=self.value, sparkline=self._sparkline, user_name="{user_name}") 
+            body = sf.format(body_template, message=message, value=self.value, sparkline=self._sparkline, user_name="{user_name}") 
 
             kwargs = dict(kwargs, source_id=self.component_id, source_name=self.name, level=level, body=body)
             Messaging.send_message(message, **kwargs)
