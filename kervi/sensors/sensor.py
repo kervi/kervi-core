@@ -114,6 +114,7 @@ class Sensor(Controller):
             return self
         return self._sub_sensors[sub_sensor]
 
+    
     @property
     def enabled(self):
         return self._enabled == True
@@ -372,8 +373,8 @@ class Sensor(Controller):
         self._sensor_value.display_unit = value
     
 
-
-
+    def set_ui_parameter(self, name, value):
+        self._sensor_value.set_ui_parameter(name, value)
 
 class _SensorThread(KerviThread):
     r"""
@@ -425,3 +426,5 @@ class _SensorThread(KerviThread):
         if self.alive:
             self.alive = False
             self.stop()
+
+
