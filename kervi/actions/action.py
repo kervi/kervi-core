@@ -167,9 +167,9 @@ class _ActionThread(threading.Thread):
         self.result = None
 
     def run(self):
-        print("run", self._action.action_id)
+        #print("run", self._action.action_id)
         self.result = self._action._execute(*self._args, **self._kwargs)
-        print("run exit", self._action.action_id)
+        #print("run exit", self._action.action_id)
 
 class _ActionInterrupt():
     def __init__(self, interrupt):
