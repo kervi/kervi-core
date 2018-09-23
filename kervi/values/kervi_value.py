@@ -21,7 +21,7 @@
 
 from datetime import datetime
 from kervi.core.utility.component import KerviComponent
-
+from kervi.config import Configuration, Text
 from kervi.actions import Actions
 VALUE_COUNTER = 0
 class KerviValue(KerviComponent):
@@ -47,6 +47,8 @@ class KerviValue(KerviComponent):
         self._index = kwargs.get("index", None)
         self.is_input = kwargs.get("is_input", True)
         self._value = None
+        self._unit = ""
+        
         self._sparkline = []
         self._observers = []
         self._value_event_handlers = []
@@ -304,26 +306,51 @@ class KerviValue(KerviComponent):
         """
         self._value_event_handlers += [(event_value, func, event_type, parameters, kwargs)]
 
+
     def _handle_range_event(self, value, message, func, level, **kwargs):
+        message_type = ""
+        message_color = "#28a745"
+        if level==1:
+            message_type = "Error"
+            message_color = "#dc3545"
+        elif level==2:
+            message_type = "Warning"
+            message_color = "#ffc107"
+
         if message:
             from kervi.messaging import Messaging
             from kervi.core.utility.superformatter import SuperFormatter
             sf = SuperFormatter()
+            
+            body_template = Configuration.texts.messages.value_plain
+            body = sf.format(
+                body_template,
+                message_color=message_color,
+                message_type = message_type,
+                source_name=self._name,
+                message=message,
+                value=self.value,
+                sparkline=self._sparkline,
+                user_name="{user_name}",
+                unit=self._unit,
+                level=level
+            ) 
 
-            body_template = '''
-                Hi {user_name}
+            html_template = Configuration.texts.messages.value_html
+            html_body = sf.format(
+                html_template,
+                message_color=message_color,
+                message_type = message_type,
+                source_name=self._name,
+                message=message,
+                value=self.value,
+                sparkline=self._sparkline,
+                user_name="{user_name}",
+                level=level,
+                unit=self._unit
+            ) 
 
-                {message}
-
-                Value: {value}
-            '''
-            #    Latest values
-            #    {sparkline:repeat: Time: {{item[timestamp}} value:{{"value"}}}
-            #'''
-
-            body = sf.format(body_template, message=message, value=self.value, sparkline=self._sparkline, user_name="{user_name}") 
-
-            kwargs = dict(kwargs, source_id=self.component_id, source_name=self.name, level=level, body=body)
+            kwargs = dict(kwargs, source_id=self.component_id, source_name=self.name, level=level, body=body, body_html=html_body)
             Messaging.send_message(message, **kwargs)
         if func:
             func(self)

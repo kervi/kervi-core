@@ -36,7 +36,6 @@ class NumberValue(KerviValue):
         #self.spine = Spine()
         self._min_value = -100
         self._max_value = 100
-        self._unit = ""
         self._type = None
         self._display_unit = ""
         self._default_value = 0.0
