@@ -30,7 +30,7 @@ import kervi.core.utility.kervi_logging as k_logging
 
 class _KerviProcess(object):
     def __init__(self, scope, name, config, ipcPort, root_close, **kwargs):
-        print("process", scope, name)
+        #print("process", scope, name)
         #process_id = groups = kwargs.get("process_id", name)
         self.name = name
         self._do_terminate = False

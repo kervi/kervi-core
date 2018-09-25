@@ -48,7 +48,6 @@ class KerviValue(KerviComponent):
         self.is_input = kwargs.get("is_input", True)
         self._value = None
         self._unit = ""
-        
         self._sparkline = []
         self._observers = []
         self._value_event_handlers = []
@@ -76,7 +75,7 @@ class KerviValue(KerviComponent):
 
         }
         self._persist_value = kwargs.get("persist_value", False)
-        self._log_values = kwargs.get("log_values", True)
+        self._log_values = kwargs.get("log_values", False)
 
     @property
     def index(self):
