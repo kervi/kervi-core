@@ -27,7 +27,6 @@ from kervi.hal import gpio
 from kervi.spine import Spine
 from kervi.core.utility.thread import KerviThread
 #import pip
-from pluginbase import PluginBase
 import importlib
 import os
 import kervi.utility
@@ -36,7 +35,7 @@ GPIO = None
 
 HAL_DRIVER_ID = None
 
-def _load():
+def _load(hw_platform="auto"):
     global GPIO, _DRIVER, HAL_DRIVER_ID
 
     if not _DRIVER:
@@ -49,24 +48,71 @@ def _load():
         #    searchpath=[ kervi_path + "/platforms"]
         #)
 
-        import pkg_resources
-        installed_packages = pkg_resources.working_set
+        import platform
+        #import os
+        
+        hal_modules = {
+            "windows": "kervi.platforms.windows",
+            #"linux": "kervi.platforms.linux",
+            #"darwin": "kervi.platforms.linux",
+            "linux(rpi)": "kervi.platforms.raspberry",
+            "generic": "kervi.platforms.generic"
+        }
+        
+        if hw_platform=="auto":
+            system = platform.system().lower()
+            if system == "linux":
+                try:
+                    with open('/proc/cpuinfo') as f:
+                        for line in f:
+                            line = line.strip()
+                            if line.startswith('Hardware') and line.endswith('BCM2708'):
+                                system = "linux(rpi)"
+                                break
+                            elif line.startswith('Hardware') and line.endswith('BCM2835'):
+                                system = "linux(rpi)"
+                                break
+                            elif line.startswith('Hardware') and line.endswith('BCM2836'):
+                                system = "linux(rpi)"
+                                break
+                            elif line.startswith('Hardware') and line.endswith('BCM2837'):
+                                system = "linux(rpi)"
+                                break
+                except:
+                    pass
+            if not system in hal_modules.keys():
+                system = "generic"
+        else:
+            system = hw_platform.lower()      
+            
+        if system in hal_modules.keys():
+            module_name = hal_modules[system] 
+            _DRIVER = importlib.import_module(module_name)
+            HAL_DRIVER_ID = module_name
+            GPIO = get_gpio()
+            return module_name
+        else:
+            raise ValueError("Invalid hw_platform. Valid values are: " + str.join(hal_modules.keys()))
 
-        #plugin_list = plugin_source.list_plugins()
-        #print("pl", plugin_list)
-        flat_installed_packages = [package.project_name for package in installed_packages]
-        known_drivers = [
-            ("kervi-hal-win", "kervi.platforms.windows"),
-            ("kervi-hal-linux", "kervi.platforms.linux"),
-            ("kervi-hal-rpi", "kervi.platforms.raspberry"),
-            ("kervi-hal-generic", "kervi.platforms.generic")
-        ]
-        for driver_name, module_name in known_drivers:
-            if driver_name in flat_installed_packages:
-                _DRIVER = importlib.import_module(module_name)
-                HAL_DRIVER_ID = module_name
-                GPIO = get_gpio()
-                return driver_name
+        # import pkg_resources
+        # installed_packages = pkg_resources.working_set
+
+        # #plugin_list = plugin_source.list_plugins()
+        # #print("pl", installed_packages)
+        # flat_installed_packages = [package.project_name for package in installed_packages]
+        # known_drivers = [
+        #     ("kervi-hal-win", "kervi.platforms.windows"),
+        #     ("kervi-hal-linux", "kervi.platforms.linux"),
+        #     ("kervi-hal-rpi", "kervi.platforms.raspberry"),
+        #     ("kervi-hal-generic", "kervi.platforms.generic")
+        # ]
+        # #print("fip", flat_installed_packages)
+        # for driver_name, module_name in known_drivers:
+        #     if driver_name in flat_installed_packages:
+        #         _DRIVER = importlib.import_module(module_name)
+        #         HAL_DRIVER_ID = module_name
+        #         GPIO = get_gpio()
+        #         return driver_name
 
 def get_user_inputs():
     return _DRIVER.get_user_inputs()
