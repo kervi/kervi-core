@@ -9,6 +9,7 @@ kervi/controllers\__init__.py
 kervi/controllers\controller.py
 kervi/controllers\steering.py
 kervi/controllers\tasks.py
+kervi/core/authentication\__init__.py
 kervi/core/utility\__init__.py
 kervi/core/utility\component.py
 kervi/core/utility\cron.py

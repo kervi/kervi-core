@@ -349,7 +349,7 @@ class KerviValue(KerviComponent):
                 unit=self._unit
             ) 
 
-            kwargs = dict(kwargs, source_id=self.component_id, source_name=self.name, level=level, body=body, body_html=html_body)
+            kwargs = dict(kwargs, source_id=self.component_id, source_name=self.name, user_groups = self._user_groups, level=level, body=body, body_html=html_body)
             Messaging.send_message(message, **kwargs)
         if func:
             func(self)
