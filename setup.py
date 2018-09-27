@@ -19,7 +19,6 @@ setup(
         'kervi/config',
         'kervi/controllers',
         'kervi/core/authentication',
-        'kervi/core/plugin'
         'kervi/core/utility',
         'kervi/core/version',
         'kervi/dashboards',
