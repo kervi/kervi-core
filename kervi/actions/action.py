@@ -6,7 +6,8 @@ import sys
 import types
 from kervi.spine import Spine
 from kervi.core.utility.component import KerviComponent
-
+from kervi.core.utility.superformatter import SuperFormatter
+from kervi.config import Configuration            
 
 ACTION_STOPPED = "stopped"
 ACTION_RUNNING = "running"
@@ -203,6 +204,51 @@ class Action(KerviComponent):
         self._interrupt = None
         self._observers = []
         self._spine_observers = {}
+
+        texts = Configuration.texts.messages
+        self._action_messages = {
+            "start":{
+                "active": True,
+                "level": 3,
+                "subject": texts.action_subject,
+                "template": texts.action_plain,
+                "html_template": texts.action_html,
+                "groups": [] 
+            },
+            "progress":{
+                "active": False,
+                "level": 3,
+                "subject": texts.action_subject,
+                "template": texts.action_plain,
+                "html_template": "Action {action_id} progress {action_progress}",
+                "groups": [] 
+            },
+            "stop":{
+                "active": True,
+                "level": 3,
+                "subject": texts.action_subject,
+                "template": texts.action_plain,
+                "html_template": "Action {action_id} progress {action_progress}",
+                "groups": []
+            },
+            "interrupted":{
+                "active": False,
+                "level": 3,
+                "subject": texts.action_subject,
+                "template": texts.action_plain,
+                "html_template": "Action {action_id} progress {action_progress}",
+                "groups": []
+            },
+            "failed":{
+                "active": True,
+                "level": 1,
+                "subject":  texts.action_subject,
+                "template": texts.action_plain,
+                "html_template": texts.action_html,
+                "groups": []
+            }
+
+        }
         
         self._ui_parameters = {
             "link_to_header": False,
@@ -233,8 +279,98 @@ class Action(KerviComponent):
         self._ui_parameters["interrupt_parameters"] = []
         self._ui_parameters["interrupt_enabled"] = False
 
+    def _send_message(self, message_type, message_text=None, **kwargs):
+        
+        #kwargs.pop("state", None)
+        message = self._action_messages[message_type]
+        if not message["active"]:
+            return
+        #message_type = ""
+        message_color = "#28a745"
+        if message["level"]==1:
+            #message_type = "Error"
+            message_color = "#dc3545"
+        elif message["level"]==2:
+            #message_type = "Warning"
+            message_color = "#ffc107"
+
+        name = self._name
+        if not name:
+            name = self.action_id 
+        sf = SuperFormatter()
+        
+        subject = sf.format(
+            message["subject"],
+            action_id = self.action_id,
+            action_name = name,
+            action_progress = 0,
+            message_color=message_color,
+            message_type = message_type,
+            message=message_text,
+            level=message["level"],
+            state=message_type
+        )
+        
+        body = sf.format(
+            message["template"],
+            action_id = self.action_id,
+            action_name = name,
+            action_progress = 0,
+            message_color=message_color,
+            message_type = message_type,
+            message=message_text,
+            level=message["level"],
+            state=message_type
+        )
+        html_body = sf.format(
+            message["html_template"],
+            message_color=message_color,
+            message_type = message_type,
+            action_id = self.action_id,
+            action_name=name,
+            message=message_text,
+            level=message["level"],
+            state=message_type,
+            action_progress=0
+        )
+        kwargs = dict(
+            kwargs,
+            #subject=message["subject"],
+            source_id=self.component_id, 
+            source_name=self.name, 
+            user_groups = self._user_groups, 
+            level=message["level"], 
+            body=body, 
+            body_html=html_body
+        )
+        from kervi.messaging import Messaging
+        Messaging.send_message(subject, **kwargs)
+
+    def _set_message(self, message_type, message=None, level=None, active=None, subject=None, template=None, html_template=None):
+        if message:
+            self._action_messages[message_type]["message"] = message
+        
+        if level:
+            self._action_messages[message_type]["level"] = level
+        
+        if active != None:
+            self._action_messages[message_type]["active"] = active
+        
+        if subject:
+            self._action_messages[message_type]["subject"] = subject
+        
+        if template:
+            self._action_messages[message_type]["template"] = template
+
+        if html_template:
+            self._action_messages[message_type]["html_template"] = html_template
+
+    def set_start_message(self, message, message_level, **kwargs):
+        self._set_message("start", level=message_level)
+
     def _execute(self, *args, **kwargs):
         kwargs.pop("injected", None) # signaling from zmq bus
+        self._send_message("start", **kwargs)
         self._state = ACTION_RUNNING
         self._is_running = True
         self._handler.__globals__["exit_action"] = False
@@ -248,6 +384,7 @@ class Action(KerviComponent):
 
         except Exception as e:
             print("action failed:", self.action_id, e)
+            self._send_message("failed", e)
             exc_type, exc_value, exc_traceback = sys.exc_info()
             traceback.print_tb(exc_traceback, limit=10, file=sys.stdout)
             self._state = ACTION_FAILED
@@ -255,6 +392,7 @@ class Action(KerviComponent):
         self._last_result = result
         self._action_lock.release()
         self._is_running = False
+        self._send_message("stop", **kwargs)
         return result
 
     def __call__(self, *args, **kwargs):
@@ -280,11 +418,14 @@ class Action(KerviComponent):
 
             
          """
-
+        print("e 1", self.action_id)
         timeout = kwargs.pop("timeout", -1)
+        print("e 2")
         execute_async = kwargs.pop("run_async", False)
+        print("e 3", timeout, execute_async)
         result = None
         if self._action_lock.acquire(False):
+            print("e 4")
             try:
                 self.spine.trigger_event("actionStarted", self.action_id)
                 if timeout == -1 and not execute_async:
@@ -296,22 +437,28 @@ class Action(KerviComponent):
                         thread.join(timeout)
                         if thread.is_alive():
                             result = None
+                            #self._send_message("failed", "Timedout in call to action")                
                             raise TimeoutError("Timeout in call to action: " + self.action_id)
                         else:
                             result = thread.result
                     else:
                         result = thread
                 return result
+            except Exception as ex:
+                print(ex)
+                self._action_lock.release()
             finally:
                 pass
             #    self._action_lock.release()
         else:
+            print("e 5")
             if not self._action_lock.acquire(True, timeout):
                 return None
             self._action_lock.release()
             return self._last_result
 
     def interrupt(self, *args, **kwargs):
+        self._send_message("interrupt", **kwargs)
         if self._interrupt:
             self._interrupt(*args, **kwargs)
         else:
@@ -350,6 +497,9 @@ class Action(KerviComponent):
             }
         ]
         return result
+    
+    def add_message(self, message, **kwargs):
+        pass
 
     def link_to_dashboard(self, dashboard_id=None, panel_id=None, **kwargs):
         r"""

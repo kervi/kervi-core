@@ -54,6 +54,7 @@ def action(method=None, **kwargs):
                 By default the action takes the name of function but you can override it with action_id.
 
             * *name* (``str``) -- Name to show in UI if the action is linked to a panel.
+            
     """
     
     def action_wrap(f): 
@@ -72,3 +73,4 @@ def action(method=None, **kwargs):
         return action_wrap(method)
     else:
         return action_wrap
+    

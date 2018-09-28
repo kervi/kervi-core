@@ -315,7 +315,6 @@ class KerviValue(KerviComponent):
         elif level==2:
             message_type = "Warning"
             message_color = "#ffc107"
-
         if message:
             from kervi.messaging import Messaging
             from kervi.core.utility.superformatter import SuperFormatter
@@ -351,6 +350,7 @@ class KerviValue(KerviComponent):
 
             kwargs = dict(kwargs, source_id=self.component_id, source_name=self.name, user_groups = self._user_groups, level=level, body=body, body_html=html_body)
             Messaging.send_message(message, **kwargs)
+            
         if func:
             func(self)
 
