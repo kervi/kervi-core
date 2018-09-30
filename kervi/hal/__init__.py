@@ -143,6 +143,13 @@ def get_camera_driver(source = None):
 def service_commands(commands, app_name, app_id, script_path):
     return _DRIVER.service_commands(commands, app_name, app_id, script_path)
 
+
+def device_reboot():
+    _DRIVER.reboot()
+
+def device_shutdown():
+    _DRIVER.shutdown()
+
 #if not _DRIVER:
 #    _load()
 
