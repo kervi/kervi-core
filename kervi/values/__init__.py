@@ -55,7 +55,7 @@ class NumberValue(KerviValue):
         self._ui_parameters["chart_fill"] = True
         self._ui_parameters["chart_point"] = 0
         if Configuration:
-            unit_system = Configuration.display.unit_systems.default
+            unit_system = Configuration.unit_system
             chart_time_format = Configuration.display.unit_systems.systems[unit_system].datetime.chart
             self._ui_parameters["chart_time_format"] = chart_time_format
         else:
@@ -151,7 +151,7 @@ class NumberValue(KerviValue):
             return self._display_unit
         else:
             config = Configuration.display.unit_systems
-            default_system = config.default
+            default_system = Configuration.unit_system
             units = config.systems[default_system]
 
             display_unit = units.get(self._type, self._unit)

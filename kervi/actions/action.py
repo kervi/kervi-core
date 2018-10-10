@@ -533,7 +533,7 @@ class Action(KerviComponent):
 
             * *value_size* (``int``) -- width of the value area as a percentage of the total container it sits in.
 
-            * *type* (``string``) -- if value should be displayes as a 'switch' (default) or 'push' for push button.
+            * *type* (``string``) -- if value should be displays as a 'switch' (default) or 'push' for push button.
 
             * *on_text* (``string``) -- Text to display when switch is on.
             * *off_text* (``string``) -- Text to display when switch is off.
