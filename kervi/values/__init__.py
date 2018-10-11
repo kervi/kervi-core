@@ -24,6 +24,8 @@ from datetime import datetime
 from kervi.values.kervi_value import KerviValue
 from kervi.core.utility.component import KerviComponent
 from kervi.config import Configuration
+import pint
+from pint import UnitRegistry
 
 class NumberValue(KerviValue):
     """
@@ -37,8 +39,7 @@ class NumberValue(KerviValue):
         self._min_value = -100
         self._max_value = 100
         self._type = None
-        self._display_unit = ""
-        self._default_value = 0.0
+        #self._display_unit = None
         self._value = 0
         self._delta = None
         self._ui_parameters["type"] = ""
@@ -114,18 +115,7 @@ class NumberValue(KerviValue):
     def min(self, value):
         self._min_value = value
 
-    @property
-    def unit(self):
-        """
-        Metric Unit of value.
-
-        :type: ``str``
-        """
-        return self._unit
-
-    @unit.setter
-    def unit(self, value):
-        self._unit = value
+    
 
     @property
     def type(self):
@@ -157,13 +147,23 @@ class NumberValue(KerviValue):
             display_unit = units.get(self._type, self._unit)
             return display_unit
 
-    @display_unit.setter
-    def display_unit(self, value):
-        self._display_unit = value
+    @property
+    def display_value(self):
+        if self.display_unit!=None and self.display_unit != self._unit:
+            ureg = UnitRegistry()
+            q = ureg.Quantity
+            value = self._value
+            from_unit = self._unit
+            to_unit = self._display_unit
 
-    def _get_ui_parameters(self, ui_parameters):
-        ui_parameters["display_unit"] = self.display_unit
-        return ui_parameters
+            print("dv", self.value_id, from_unit, to_unit)
+
+            from_value = value * ureg.parse_expression(from_unit)
+            return q(from_value).to(to_unit)
+        else:
+            return self._value
+    
+    
 
     
     def _get_info(self, **kwargs):
@@ -227,12 +227,18 @@ class NumberValue(KerviValue):
             self._last_reading = time.clock()
 
             
-            val = {"value_id":self.component_id, "value":new_value, "timestamp":datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")}
+            val = {
+                "id":self.component_id,
+                "value":new_value,
+                "timestamp":datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                "display_value": self.display_value,
+                "display_unit": self.display_unit
+            }
             
             self.spine.trigger_event(
                 "valueChanged",
                 self.component_id,
-                {"id":self.component_id, "value":new_value, "timestamp":datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")},
+                val,
                 self._log_values,
                 groups=self.user_groups
             )

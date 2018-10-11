@@ -81,6 +81,7 @@ class Sensor(Controller):
             self.value_type = self._device.type
             self.value_unit = self._device.unit
             self._sensor_value.unit = self._device.unit
+            self._sensor_value.type = self._device.type
             self._sensor_value.min = self._device.min
             self._sensor_value.max = self._device.max
             if self._index == -1:

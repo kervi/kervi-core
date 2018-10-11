@@ -47,7 +47,10 @@ class KerviValue(KerviComponent):
         self._index = kwargs.get("index", None)
         self.is_input = kwargs.get("is_input", True)
         self._value = None
+        self._display_value = None
         self._unit = ""
+        self._display_unit = None
+        
         self._sparkline = []
         self._observers = []
         self._value_event_handlers = []
@@ -101,6 +104,31 @@ class KerviValue(KerviComponent):
         """
         self._set_value(new_value)
 
+    @property
+    def display_value(self):
+        return self._value
+
+    
+    @property
+    def unit(self):
+        """
+        Metric Unit of value.
+
+        :type: ``str``
+        """
+        return self._unit
+
+    @unit.setter
+    def unit(self, value):
+        self._unit = value
+    
+    @property
+    def display_unit(self):
+        if self._display_unit:
+            return self._display_unit
+        else:
+            return self._unit
+    
     @property
     def log_values(self):
         """
@@ -230,11 +258,15 @@ class KerviValue(KerviComponent):
 
     def _link_changed_event(self, id, source, old_value):
         if source["id"] in self._spine_observers.keys():
+            if not self._display_unit:
+                self._display_unit = source["display_unit"]
+            
             transformation = self._spine_observers[source["id"]]
             if transformation:
                 self.value = transformation(source["value"])
             else:
                 self.value = source["value"]
+                self._display_value = source["display_value"]
 
     def _set_value(self, nvalue, allow_persist=True):
         if self._value != nvalue:
@@ -266,7 +298,14 @@ class KerviValue(KerviComponent):
             if self._persist_value and allow_persist:
                 self.settings.store_value("value", self.value)
 
-            val = {"id":self.component_id, "value":nvalue, "timestamp":datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")}
+            val = {
+                "id":self.component_id,
+                "value":nvalue,
+                "timestamp":datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                "display_value": self.display_value,
+                "display_unit": self.display_unit
+            }
+            
             self.spine.trigger_event(
                 "valueChanged",
                 self.component_id,
@@ -276,7 +315,10 @@ class KerviValue(KerviComponent):
             )
 
     def kervi_value_changed(self, source, value):
+        if self._display_unit == None:
+            self._display_unit = source.display_unit
         self._set_value(value, False)
+        
 
     def value_changed(self, new_value, old_value):
         pass
@@ -391,6 +433,11 @@ class KerviValue(KerviComponent):
                 ranges += [{"start":value, "end":None, "type":event_type}]
         return ranges
 
+    
+    def _get_ui_parameters(self, ui_parameters):
+        ui_parameters["display_unit"] = self.display_unit
+        return ui_parameters
+    
     def _get_info(self, **kwargs):
         return {
             "value":self.value,

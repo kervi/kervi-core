@@ -26,6 +26,7 @@ import threading
 import time
 from kervi.controllers.controller import Controller
 from kervi.values import *
+from kervi.sensors.sensor import Sensor
 from kervi.values.value_list import ValueList
 from kervi.actions import action 
 from PIL import Image, ImageDraw
@@ -298,7 +299,8 @@ class DisplayPage(Controller):
         kwargs = {}
         for link_id in self._links:
             link = self._links[link_id]
-            kwargs[link.value_id] = link.value.value
+            kwargs[link.value_id] = link.value.display_value
+            kwargs[link.value_id + "_unit"] = link.value.display_unit
         self._text = self.template.format(self._template, **kwargs)
         for display in self._displays:
             display._page_changed(self) 
@@ -315,14 +317,22 @@ class DisplayPage(Controller):
 
     def link_value(self, source, format=None):
         id = None
-        if isinstance(source, KerviValue):
+        display_unit = None
+        link_source = source
+        if isinstance(source, Sensor):
+            id = source.sensor_id
+            link_source = source._sensor_value
+            display_unit = link_source.display_unit
+        elif isinstance(source, KerviValue):
             id = source.value_id
+            display_unit = link_source.display_unit
         elif isinstance(source, str):
             id = source
-
+        print("lvu", id, display_unit)
         if id:
             value = self.inputs.add(id, id, StringValue)
-            value.link_to(source, lambda x: self._transform(x, format))
+            value._display_unit = display_unit
+            value.link_to(link_source, lambda x: self._transform(x, format))
             self._links[id] = _DisplayLink(value, id)
         else:
-            raise ValueError("Source must be a KerviValue or string")
+            raise ValueError("Source must be a KerviValue, Sensor or string")
