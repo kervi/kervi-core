@@ -258,15 +258,11 @@ class KerviValue(KerviComponent):
 
     def _link_changed_event(self, id, source, old_value):
         if source["id"] in self._spine_observers.keys():
-            if not self._display_unit:
-                self._display_unit = source["display_unit"]
-            
             transformation = self._spine_observers[source["id"]]
             if transformation:
                 self.value = transformation(source["value"])
             else:
                 self.value = source["value"]
-                self._display_value = source["display_value"]
 
     def _set_value(self, nvalue, allow_persist=True):
         if self._value != nvalue:
@@ -315,10 +311,7 @@ class KerviValue(KerviComponent):
             )
 
     def kervi_value_changed(self, source, value):
-        if self._display_unit == None:
-            self._display_unit = source.display_unit
         self._set_value(value, False)
-        
 
     def value_changed(self, new_value, old_value):
         pass
@@ -369,10 +362,10 @@ class KerviValue(KerviComponent):
                 message_type = message_type,
                 source_name=self._name,
                 message=message,
-                value=self.value,
+                value=self.display_value,
                 sparkline=self._sparkline,
                 user_name="{user_name}",
-                unit=self._unit,
+                unit=self._display_unit,
                 level=level
             ) 
 
@@ -383,11 +376,11 @@ class KerviValue(KerviComponent):
                 message_type = message_type,
                 source_name=self._name,
                 message=message,
-                value=self.value,
+                value=self.display_value,
                 sparkline=self._sparkline,
                 user_name="{user_name}",
                 level=level,
-                unit=self._unit
+                unit=self._display_unit
             ) 
 
             kwargs = dict(kwargs, source_id=self.component_id, source_name=self.name, user_groups = self._user_groups, level=level, body=body, body_html=html_body)

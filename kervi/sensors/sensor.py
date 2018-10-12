@@ -36,11 +36,11 @@ from kervi.actions import action
 
 class Sensor(Controller):
     r"""
-    Sensor is a class that exposes a sensor device as a dynamic value.
+    Sensor is a class that exposes a sensor device as a KerviValue.
     The Sensor class polls the associated sensor device and updates it self when
     the value of the sensor device change.
 
-    All the possibilities for linking to other dynamic values and dashboards are inherited from NumberValue.
+    It is possible to link to other KerviValues and dashboards.
 
     Some sensor devices are multi dimensional and each dimension are reached by a numeric index of the sensor it self.
 
@@ -80,8 +80,8 @@ class Sensor(Controller):
         if self._device:
             self.value_type = self._device.type
             self.value_unit = self._device.unit
-            self._sensor_value.unit = self._device.unit
             self._sensor_value.type = self._device.type
+            self._sensor_value.unit = self._device.unit
             self._sensor_value.min = self._device.min
             self._sensor_value.max = self._device.max
             if self._index == -1:
@@ -265,17 +265,17 @@ class Sensor(Controller):
     def log_values(self, value):
         self._sensor_value._log_values = value
 
-    @property
-    def persist_value(self):
-        """
-        Set to true if the current value should be saved to db when the Kervi application or module exits.
-        The value will be restored upon application or module start. 
-        """
-        return self._sensor_value._persist_value
+    # @property
+    # def persist_value(self):
+    #     """
+    #     Set to true if the current value should be saved to db when the Kervi application or module exits.
+    #     The value will be restored upon application or module start. 
+    #     """
+    #     return self._sensor_value._persist_value
 
-    @persist_value.setter
-    def persist_value(self, do_persist):
-        self._sensor_value.persist_value = do_persist
+    # @persist_value.setter
+    # def persist_value(self, do_persist):
+    #     self._sensor_value.persist_value = do_persist
 
     def add_value_event(self, event_value, func, event_type=None, parameters=None, **kwargs):
         """

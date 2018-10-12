@@ -255,21 +255,40 @@ class Display(Controller):
 
 
 class _DisplayLink:
-    def __init__(self, value, value_id, x=0, y=0, size=0):
-        self.value = value
+    def __init__(self, transform, value_id, link_id, x=0, y=0, size=0):
+        self.transform = transform
+        self.link_id = link_id
         self.value_id = value_id
         self.x= x
         self.y = y
         self.size = size
+        self.value = ""
+        self.unit = ""
+
+    def _set_value(self, value, unit):
+        if self.transform:
+            self.value = self.transform(value)
+        else:
+            self.value = value
+
+        self.unit = unit
 
 class DisplayPage(Controller):
     def __init__(self, page_id, name = None):
         Controller.__init__(self, page_id, name)
+        self.spine.register_event_handler("valueChanged", self._link_changed_event)
         self._template = ""
         self._links = {}
         self._displays = []
         self._text = None
         self._lines = 1
+
+    def _link_changed_event(self, source_id, value, x):
+        #print("lc", source_id, value)
+        if source_id in self._links.keys():
+            link = self._links[source_id]
+            link._set_value(value["display_value"], value["display_unit"])
+            self._render()
 
     def _add_display(self, display):
         self._displays.append(display)
@@ -299,8 +318,8 @@ class DisplayPage(Controller):
         kwargs = {}
         for link_id in self._links:
             link = self._links[link_id]
-            kwargs[link.value_id] = link.value.display_value
-            kwargs[link.value_id + "_unit"] = link.value.display_unit
+            kwargs[link.link_id] = link.value
+            kwargs[link.link_id + "_unit"] = link.unit
         self._text = self.template.format(self._template, **kwargs)
         for display in self._displays:
             display._page_changed(self) 
@@ -317,22 +336,18 @@ class DisplayPage(Controller):
 
     def link_value(self, source, format=None):
         id = None
-        display_unit = None
-        link_source = source
+        value_id = None
         if isinstance(source, Sensor):
             id = source.sensor_id
-            link_source = source._sensor_value
-            display_unit = link_source.display_unit
+            value_id = source._sensor_value.value_id
         elif isinstance(source, KerviValue):
             id = source.value_id
-            display_unit = link_source.display_unit
+            value_id = id
         elif isinstance(source, str):
             id = source
-        print("lvu", id, display_unit)
+            value_id = id
         if id:
-            value = self.inputs.add(id, id, StringValue)
-            value._display_unit = display_unit
-            value.link_to(link_source, lambda x: self._transform(x, format))
-            self._links[id] = _DisplayLink(value, id)
+            self.spine.register_event_handler("valueChanged", self._link_changed_event, value_id)
+            self._links[value_id] = _DisplayLink(lambda x: self._transform(x, format), value_id, id)
         else:
             raise ValueError("Source must be a KerviValue, Sensor or string")

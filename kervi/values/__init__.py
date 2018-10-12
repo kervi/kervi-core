@@ -36,6 +36,11 @@ class NumberValue(KerviValue):
     def __init__(self, name, **kwargs):
         KerviValue.__init__(self, name, "number-value", **kwargs)
         #self.spine = Spine()
+        self._ureg = UnitRegistry()
+        self._ureg.autoconvert_offset_to_baseunit = True
+        self._Q = self._ureg.Quantity
+        self._q_unit = None
+        self._q_display = None
         self._min_value = -100
         self._max_value = 100
         self._type = None
@@ -144,27 +149,46 @@ class NumberValue(KerviValue):
             default_system = Configuration.unit_system
             units = config.systems[default_system]
 
-            display_unit = units.get(self._type, self._unit)
-            return display_unit
+            self._display_unit = units.get(self._type, self._unit)
+
+            if self._type == "temperature":
+                from_unit = "deg" + self._unit.upper()
+                to_unit = "deg" + self._display_unit.upper()
+            else:
+                from_unit = self._unit
+                to_unit = self._display_unit
+
+            #print("dv", from_unit, to_unit)
+            self._q_unit = self._Q("1 " + from_unit)
+            self._q_display = self._Q("1 " + to_unit)
+            
+            
+            return self._display_unit
+
+    @display_unit.setter
+    def display_unit(self, value):
+        if value != self._display_unit:
+            self._display_unit = value
+            if self._type == "temperature":
+                from_unit = "deg" + self._unit.upper()
+                to_unit = "deg" + self._display_unit.upper()
+            else:
+                from_unit = self._unit
+                to_unit = self.display_unit
+
+            self._q_unit = self._ureg.parse_expression(from_unit)
+            self._q_display = self._ureg.parse_expression(to_unit)
 
     @property
     def display_value(self):
-        if self.display_unit!=None and self.display_unit != self._unit:
-            ureg = UnitRegistry()
-            q = ureg.Quantity
-            value = self._value
-            from_unit = self._unit
-            to_unit = self._display_unit
-
-            print("dv", self.value_id, from_unit, to_unit)
-
-            from_value = value * ureg.parse_expression(from_unit)
-            return q(from_value).to(to_unit)
+        if self._q_display and self._q_unit:
+            dv = self._value * self._q_unit
+            return round(dv.to(self._q_display).magnitude, 3)
         else:
-            return self._value
-    
-    
-
+            if self._value:
+                return round(self._value, 3)
+            else:
+                return 0.0
     
     def _get_info(self, **kwargs):
         return {
