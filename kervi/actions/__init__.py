@@ -1,3 +1,6 @@
+#Copyright 2018 Tim Wentlau.
+#Distributed under the MIT License. See LICENSE in root of project.
+
 """
         Actions is a global list of actions in the kervi application.
         You dont use it directly but access it via:
@@ -20,6 +23,12 @@ Actions = None
 if not Actions:
     Actions = _Actions()
 
+def _is_method(func):
+    spec = inspect.signature(func)
+    if len(spec.parameters) > 0:
+        if list(spec.parameters.keys())[0] == 'self':
+            return True
+    return False
 
 class _SetInterrupt():
     def __init__(self, action_id):
@@ -60,13 +69,21 @@ def action(method=None, **kwargs):
     def action_wrap(f): 
         action_id = kwargs.get("action_id", f.__name__)
         name = kwargs.get("name", action_id)
-        if not "." in f.__qualname__:
+        if not _is_method(f): # not "." in f.__qualname__:
             action = Action(f, action_id, name)
             Actions.add(action)
             return action
         else:
-            Actions.add_unbound(f.__qualname__, action_id, name)
-            setattr(f, "set_interrupt", _SetInterrupt(action_id))
+            qual_name = getattr(f, "__qualname__", None)
+            owner_class = kwargs.get("controller_class", None)
+            if owner_class:
+                qual_name = owner_class + "." + f.__name__
+
+            if qual_name:    
+                Actions.add_unbound(qual_name, action_id, name)
+                setattr(f, "set_interrupt", _SetInterrupt(action_id))
+            else:
+                print("using upython? if yes you need to pass the name of the controller class via the controller_class parameter.")
             return f
 
     if method:
