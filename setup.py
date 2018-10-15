@@ -56,5 +56,8 @@ setup(
         "Operating System :: POSIX :: Linux",
         "Programming Language :: Python :: 3.4"
     ],
+    install_requires=[
+        'pint'
+    ]
     
 )

@@ -19,7 +19,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from kervi.controllers.controller import Controller
+from kervi.controllers import Controller
 from kervi.spine import Spine
 #import inspect
 

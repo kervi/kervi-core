@@ -3,7 +3,7 @@ import time
 import datetime
 import threading
 from kervi.values import DateTimeValue
-from kervi.controllers.controller import Controller
+from kervi.controllers import Controller
 
 class _ClockThread(threading.Thread):
     def __init__(self, controller, tick_time=1):

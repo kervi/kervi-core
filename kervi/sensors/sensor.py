@@ -25,8 +25,10 @@ The first part is sensor device drivers that handles physical access to sensor h
 The second part is the Sensor class that reads a sensor device and triggers events, store readings to DB.
 """
 
+print("importing Sensor class from kervi.sensors.sensor is obsolete. Use 'from kervi.sensors import Sensor'")
+
 import time
-from kervi.controllers.controller import Controller
+from kervi.controllers import Controller
 from kervi.core.utility.thread import KerviThread
 from kervi.spine import Spine
 from kervi.values import NumberValue, ColorValue, KerviValue

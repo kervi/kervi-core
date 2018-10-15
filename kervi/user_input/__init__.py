@@ -1,6 +1,6 @@
 
 import threading
-from kervi.controllers.controller import Controller
+from kervi.controllers import Controller
 from kervi.values import NumberValue, StringValue
 import kervi.hal as hal
 

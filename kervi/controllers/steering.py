@@ -19,7 +19,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import time
-from kervi.controllers.controller import Controller
+from kervi.controllers import Controller
 from kervi.controllers.tasks import TaskHandler
 from kervi.values import NumberValue, BooleanValue
 from kervi.actions import action

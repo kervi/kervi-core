@@ -24,9 +24,9 @@ The display module holds classes for handling displays.
 import os
 import threading
 import time
-from kervi.controllers.controller import Controller
+from kervi.controllers import Controller
 from kervi.values import *
-from kervi.sensors.sensor import Sensor
+from kervi.sensors import Sensor
 from kervi.values.value_list import ValueList
 from kervi.actions import action 
 from PIL import Image, ImageDraw
