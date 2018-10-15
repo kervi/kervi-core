@@ -31,7 +31,6 @@ spine = Spine()
 spine.sendCommand("SetMyValue",myValue)
 """
 
-import pip
 import importlib
 
 S = None

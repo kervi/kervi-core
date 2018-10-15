@@ -29,7 +29,7 @@ from kervi.core.utility.thread import KerviThread
 #import pip
 import importlib
 import os
-import kervi.utility
+#import kervi.utility
 _DRIVER = None
 GPIO = None
 
@@ -48,7 +48,6 @@ def _load(hw_platform="auto"):
         #    searchpath=[ kervi_path + "/platforms"]
         #)
 
-        import platform
         #import os
         
         hal_modules = {
@@ -56,10 +55,12 @@ def _load(hw_platform="auto"):
             #"linux": "kervi.platforms.linux",
             #"darwin": "kervi.platforms.linux",
             "linux(rpi)": "kervi.platforms.raspberry",
-            "generic": "kervi.platforms.generic"
+            "generic": "kervi.platforms.generic",
+            "upython": "kervi.platforms.upython"
         }
         
         if hw_platform=="auto":
+            import platform
             system = platform.system().lower()
             if system == "linux":
                 try:
@@ -85,7 +86,9 @@ def _load(hw_platform="auto"):
         else:
             system = hw_platform.lower()      
             
-        if system in hal_modules.keys():
+        if system == "upython":
+            import ukervi.platforms.upython as _DRIVER
+        elif system in hal_modules.keys():
             module_name = hal_modules[system] 
             _DRIVER = importlib.import_module(module_name)
             HAL_DRIVER_ID = module_name

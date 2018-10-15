@@ -20,12 +20,15 @@
 # SOFTWARE.
 
 import time
-from datetime import datetime
+try:
+    from datetime import datetime
+except:
+    from kervi.core.utility.udatetime import datetime
+
 from kervi.values.kervi_value import KerviValue
 from kervi.core.utility.component import KerviComponent
 from kervi.config import Configuration
-import pint
-from pint import UnitRegistry
+
 
 class NumberValue(KerviValue):
     """
@@ -36,9 +39,14 @@ class NumberValue(KerviValue):
     def __init__(self, name, **kwargs):
         KerviValue.__init__(self, name, "number-value", **kwargs)
         #self.spine = Spine()
-        self._ureg = UnitRegistry()
-        self._ureg.autoconvert_offset_to_baseunit = True
-        self._Q = self._ureg.Quantity
+        try:
+            from pint import UnitRegistry
+            self._ureg = UnitRegistry()
+            self._ureg.autoconvert_offset_to_baseunit = True
+            self._Q = self._ureg.Quantity
+        except ModuleNotFoundError:
+            self._Q = None
+
         self._q_unit = None
         self._q_display = None
         self._min_value = -100
@@ -144,7 +152,7 @@ class NumberValue(KerviValue):
         """
         if self._display_unit:
             return self._display_unit
-        else:
+        elif self._Q:
             config = Configuration.display.unit_systems
             default_system = Configuration.unit_system
             units = config.systems[default_system]
@@ -163,7 +171,7 @@ class NumberValue(KerviValue):
             self._q_display = self._Q("1 " + to_unit)
             
             
-            return self._display_unit
+        return self._display_unit
 
     @display_unit.setter
     def display_unit(self, value):
@@ -254,7 +262,7 @@ class NumberValue(KerviValue):
             val = {
                 "id":self.component_id,
                 "value":new_value,
-                "timestamp":datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                "timestamp":timestamp,
                 "display_value": self.display_value,
                 "display_unit": self.display_unit
             }

@@ -22,7 +22,7 @@
 """  """
 
 import threading
-import logging
+#import logging
 
 class KerviThread(threading.Thread):
     """
@@ -49,8 +49,9 @@ class KerviThread(threading.Thread):
             try:
                 self._step()
             except:
-                log = logging.getLogger()
-                log.exception("kervi thread:" + self.__class__.__name__)
+                pass
+                #log = logging.getLogger()
+                #log.exception("kervi thread:" + self.__class__.__name__)
 
     def _step(self):
         """

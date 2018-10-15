@@ -19,7 +19,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from datetime import datetime
+try:
+    from datetime import datetime
+except:
+    from kervi.core.utility.udatetime import datetime
+
 from kervi.core.utility.component import KerviComponent
 from kervi.config import Configuration, Text
 from kervi.actions import Actions

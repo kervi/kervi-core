@@ -20,7 +20,10 @@
 # SOFTWARE.
 
 import random
-from datetime import datetime
+try:
+    from datetime import datetime
+except:
+    from kervi.core.utility.udatetime import datetime
 import kervi.spine as spine
 from kervi.core.utility.settings import Settings
 
