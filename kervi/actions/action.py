@@ -1,3 +1,5 @@
+#Copyright 2018 Tim Wentlau.
+#Distributed under the MIT License. See LICENSE in root of project.
 
 import inspect
 import threading
@@ -418,14 +420,10 @@ class Action(KerviComponent):
 
             
          """
-        print("e 1", self.action_id)
         timeout = kwargs.pop("timeout", -1)
-        print("e 2")
         execute_async = kwargs.pop("run_async", False)
-        print("e 3", timeout, execute_async)
         result = None
         if self._action_lock.acquire(False):
-            print("e 4")
             try:
                 self.spine.trigger_event("actionStarted", self.action_id)
                 if timeout == -1 and not execute_async:
@@ -451,7 +449,6 @@ class Action(KerviComponent):
                 pass
             #    self._action_lock.release()
         else:
-            print("e 5")
             if not self._action_lock.acquire(True, timeout):
                 return None
             self._action_lock.release()
@@ -631,12 +628,20 @@ class Action(KerviComponent):
         def action_wrap(f):
             action_id = kwargs.get("action_id", f.__name__)
             name = kwargs.get("name", action_id)
-            if not "." in f.__qualname__:
+            if inspect.ismethod(f): # not "." in f.__qualname__:
                 self._interrupt = _ActionInterrupt(f)
                 self._ui_parameters["interrupt_enabled"] = True
                 return self._interrupt
             else:
-                Actions.add_unbound_interrupt(f.__qualname__, self)
+                qual_name = getattr(f, "__qualname__", None)
+                owner_class = kwargs.get("controller_class", None)
+                if owner_class:
+                    qual_name = owner_class + "." + f.__name__
+
+                if qual_name:
+                    Actions.add_unbound_interrupt(qual_name, self)
+                else:
+                    print("using upython? if yes you need to pass the name of the controller class via the controller_class parameter.")    
                 return f
         
         if method:

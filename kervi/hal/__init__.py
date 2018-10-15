@@ -1,32 +1,12 @@
-#MIT License
-#Copyright (c) 2017 Tim Wentzlau
+#Copyright 2016 Tim Wentlau.
+#Distributed under the MIT License. See LICENSE in root of project.
 
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
 
 """Hardware abstraction layer"""
 import time
 from kervi.hal import gpio
-#from kervi.hal import i2c
-#from kervi.hal import one_wire
 from kervi.spine import Spine
 from kervi.core.utility.thread import KerviThread
-#import pip
 import importlib
 import os
 #import kervi.utility
@@ -39,17 +19,6 @@ def _load(hw_platform="auto"):
     global GPIO, _DRIVER, HAL_DRIVER_ID
 
     if not _DRIVER:
-        #installed_packages = pip.get_installed_distributions()
-        #kervi_path = os.path.dirname(kervi.utility.__file__)
-        #kervi_path = kervi_path[:-8]
-        #print("kp", kervi_path )
-        #plugin_base = PluginBase(package='kervi.platform.plugins')
-        #plugin_source = plugin_base.make_plugin_source(
-        #    searchpath=[ kervi_path + "/platforms"]
-        #)
-
-        #import os
-        
         hal_modules = {
             "windows": "kervi.platforms.windows",
             #"linux": "kervi.platforms.linux",
@@ -96,26 +65,6 @@ def _load(hw_platform="auto"):
             return module_name
         else:
             raise ValueError("Invalid hw_platform. Valid values are: " + str.join(hal_modules.keys()))
-
-        # import pkg_resources
-        # installed_packages = pkg_resources.working_set
-
-        # #plugin_list = plugin_source.list_plugins()
-        # #print("pl", installed_packages)
-        # flat_installed_packages = [package.project_name for package in installed_packages]
-        # known_drivers = [
-        #     ("kervi-hal-win", "kervi.platforms.windows"),
-        #     ("kervi-hal-linux", "kervi.platforms.linux"),
-        #     ("kervi-hal-rpi", "kervi.platforms.raspberry"),
-        #     ("kervi-hal-generic", "kervi.platforms.generic")
-        # ]
-        # #print("fip", flat_installed_packages)
-        # for driver_name, module_name in known_drivers:
-        #     if driver_name in flat_installed_packages:
-        #         _DRIVER = importlib.import_module(module_name)
-        #         HAL_DRIVER_ID = module_name
-        #         GPIO = get_gpio()
-        #         return driver_name
 
 def get_user_inputs():
     return _DRIVER.get_user_inputs()

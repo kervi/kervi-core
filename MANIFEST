@@ -6,7 +6,7 @@ kervi/actions\actions_list.py
 kervi/config\__init__.py
 kervi/config\configuration.py
 kervi/controllers\__init__.py
-kervi/controllers\controller.py
+kervi/controllers\controllerx.py
 kervi/controllers\steering.py
 kervi/controllers\tasks.py
 kervi/core/authentication\__init__.py

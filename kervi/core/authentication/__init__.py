@@ -1,3 +1,6 @@
+#Copyright 2018 Tim Wentlau.
+#Distributed under the MIT License. See LICENSE in root of project.
+
 
 from kervi.spine import Spine
 

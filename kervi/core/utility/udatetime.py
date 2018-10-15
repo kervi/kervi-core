@@ -1,3 +1,6 @@
+#Copyright 2017 Tim Wentlau.
+#Distributed under the MIT License. See LICENSE in root of project.
+
 class datetime():
     def __init__(self):
         pass

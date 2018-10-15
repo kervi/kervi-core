@@ -1,3 +1,5 @@
+#Copyright 2018 Tim Wentlau.
+#Distributed under the MIT License. See LICENSE in root of project.
 
 import time
 import datetime
