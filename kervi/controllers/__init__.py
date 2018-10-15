@@ -66,8 +66,13 @@ class Controller(KerviComponent):
             try:
                 if hasattr(self, method_name):
                     method = getattr(self, method_name)
-                    if hasattr(method, "__qualname__") and Actions.is_unbound(method.__qualname__):
-                        action_id, name = Actions.get_unbound(method.__qualname__)
+                    method_qual_name = getattr(method, "__qualname__", None)
+                    if not method_qual_name:
+                        method_qual_name = self.__class__.__name__ + "." + method_name
+                    
+                    if Actions.is_unbound(method_qual_name):
+                        #print("mqn", method_qual_name, method.__qualname__)
+                        action_id, name = Actions.get_unbound(method_qual_name)
                         setattr(self, "kervi_action_"+ method.__name__, method)
                         copy_method = getattr(self, "kervi_action_"+ method.__name__)
                         action = Action(copy_method, self.controller_id + "." + action_id, name)
@@ -81,8 +86,11 @@ class Controller(KerviComponent):
             try:
                 if hasattr(self, method_name):
                     method = getattr(self, method_name)
-                    if hasattr(method, "__qualname__") and Actions.is_unbound_interrupt(method.__qualname__):
-                        action_id = Actions.get_unbound_interrupt(method.__qualname__)
+                    method_qual_name = getattr(method, "__qualname__", None)
+                    if not method_qual_name:
+                        method_qual_name = self.__class__.__name__ + "." + method_name
+                    if Actions.is_unbound_interrupt(method_qual_name):
+                        action_id = Actions.get_unbound_interrupt(method_qual_name)
                         action = self.actions[action_id]
                         action._interrupt = _ActionInterrupt(method)
                         action.set_ui_parameter("interrupt_enabled", True)
