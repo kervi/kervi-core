@@ -1,27 +1,13 @@
-#MIT License
-#Copyright (c) 2017 Tim Wentzlau
+#Copyright 2017 Tim Wentlau.
+#Distributed under the MIT License. See LICENSE in root of project.
 
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
+try:
+    from datetime import datetime
+except:
+    from kervi.core.utility.udatetime import datetime
 
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-
-from datetime import datetime
 from kervi.core.utility.component import KerviComponent
-
+from kervi.config import Configuration, Text
 from kervi.actions import Actions
 VALUE_COUNTER = 0
 class KerviValue(KerviComponent):
@@ -47,6 +33,10 @@ class KerviValue(KerviComponent):
         self._index = kwargs.get("index", None)
         self.is_input = kwargs.get("is_input", True)
         self._value = None
+        self._display_value = None
+        self._unit = ""
+        self._display_unit = None
+        
         self._sparkline = []
         self._observers = []
         self._value_event_handlers = []
@@ -74,7 +64,7 @@ class KerviValue(KerviComponent):
 
         }
         self._persist_value = kwargs.get("persist_value", False)
-        self._log_values = kwargs.get("log_values", True)
+        self._log_values = kwargs.get("log_values", False)
 
     @property
     def index(self):
@@ -100,6 +90,31 @@ class KerviValue(KerviComponent):
         """
         self._set_value(new_value)
 
+    @property
+    def display_value(self):
+        return self._value
+
+    
+    @property
+    def unit(self):
+        """
+        Metric Unit of value.
+
+        :type: ``str``
+        """
+        return self._unit
+
+    @unit.setter
+    def unit(self, value):
+        self._unit = value
+    
+    @property
+    def display_unit(self):
+        if self._display_unit:
+            return self._display_unit
+        else:
+            return self._unit
+    
     @property
     def log_values(self):
         """
@@ -245,21 +260,34 @@ class KerviValue(KerviComponent):
 
             old_value = self.value
             self._value = nvalue
-            self.value_changed(nvalue, old_value)
-
+            try:
+                self.value_changed(nvalue, old_value)
+            except Exception as Ex:
+                print("Error in value changed", Ex)
+            
             for observer in self._observers:
-                item, transformation = observer
-                if transformation:
-                    item.kervi_value_changed(self, transformation(nvalue))
-                else:
-                    item.kervi_value_changed(self, nvalue)
+                try:
+                    item, transformation = observer
+                    if transformation:
+                        item.kervi_value_changed(self, transformation(nvalue))
+                    else:
+                        item.kervi_value_changed(self, nvalue)
+                except Exception:
+                    print("error in value observer:")
 
             self._check_value_events(nvalue, old_value)
 
             if self._persist_value and allow_persist:
                 self.settings.store_value("value", self.value)
 
-            val = {"id":self.component_id, "value":nvalue, "timestamp":datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")}
+            val = {
+                "id":self.component_id,
+                "value":nvalue,
+                "timestamp":datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                "display_value": self.display_value,
+                "display_unit": self.display_unit
+            }
+            
             self.spine.trigger_event(
                 "valueChanged",
                 self.component_id,
@@ -298,27 +326,52 @@ class KerviValue(KerviComponent):
         """
         self._value_event_handlers += [(event_value, func, event_type, parameters, kwargs)]
 
+
     def _handle_range_event(self, value, message, func, level, **kwargs):
+        message_type = ""
+        message_color = "#28a745"
+        if level==1:
+            message_type = "Error"
+            message_color = "#dc3545"
+        elif level==2:
+            message_type = "Warning"
+            message_color = "#ffc107"
         if message:
             from kervi.messaging import Messaging
             from kervi.core.utility.superformatter import SuperFormatter
             sf = SuperFormatter()
+            
+            body_template = Configuration.texts.messages.value_plain
+            body = sf.format(
+                body_template,
+                message_color=message_color,
+                message_type = message_type,
+                source_name=self._name,
+                message=message,
+                value=self.display_value,
+                sparkline=self._sparkline,
+                user_name="{user_name}",
+                unit=self._display_unit,
+                level=level
+            ) 
 
-            body_template = '''
-                Hi {user_name}
+            html_template = Configuration.texts.messages.value_html
+            html_body = sf.format(
+                html_template,
+                message_color=message_color,
+                message_type = message_type,
+                source_name=self._name,
+                message=message,
+                value=self.display_value,
+                sparkline=self._sparkline,
+                user_name="{user_name}",
+                level=level,
+                unit=self._display_unit
+            ) 
 
-                {message}
-
-                Value: {value}
-
-                Latest values
-                {sparkline:repeat: Time: {{item[timestamp}} value:{{"value"}}}
-            '''
-
-            body = None #sf.format(body_template, message=message, value=self.value, sparkline=self._sparkline, user_name="{user_name}") 
-
-            kwargs = dict(kwargs, source_id=self.component_id, source_name=self.name, level=level, body=body)
+            kwargs = dict(kwargs, source_id=self.component_id, source_name=self.name, user_groups = self._user_groups, level=level, body=body, body_html=html_body)
             Messaging.send_message(message, **kwargs)
+            
         if func:
             func(self)
 
@@ -359,8 +412,12 @@ class KerviValue(KerviComponent):
                 ranges += [{"start":value, "end":None, "type":event_type}]
         return ranges
 
+    
+    def _get_ui_parameters(self, ui_parameters):
+        ui_parameters["display_unit"] = self.display_unit
+        return ui_parameters
+    
     def _get_info(self, **kwargs):
-        
         return {
             "value":self.value,
             "command":self.command,

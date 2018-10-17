@@ -1,29 +1,16 @@
-#MIT License
-#Copyright (c) 2017 Tim Wentzlau
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+#Copyright 2017 Tim Wentlau.
+#Distributed under the MIT License. See LICENSE in root of project.
 
 import time
-from datetime import datetime
+try:
+    from datetime import datetime
+except:
+    from kervi.core.utility.udatetime import datetime
+
 from kervi.values.kervi_value import KerviValue
 from kervi.core.utility.component import KerviComponent
 from kervi.config import Configuration
+
 
 class NumberValue(KerviValue):
     """
@@ -34,12 +21,20 @@ class NumberValue(KerviValue):
     def __init__(self, name, **kwargs):
         KerviValue.__init__(self, name, "number-value", **kwargs)
         #self.spine = Spine()
+        try:
+            from pint import UnitRegistry
+            self._ureg = UnitRegistry()
+            self._ureg.autoconvert_offset_to_baseunit = True
+            self._Q = self._ureg.Quantity
+        except ModuleNotFoundError:
+            self._Q = None
+
+        self._q_unit = None
+        self._q_display = None
         self._min_value = -100
         self._max_value = 100
-        self._unit = ""
         self._type = None
-        self._display_unit = ""
-        self._default_value = 0.0
+        #self._display_unit = None
         self._value = 0
         self._delta = None
         self._ui_parameters["type"] = ""
@@ -48,6 +43,7 @@ class NumberValue(KerviValue):
         self._ui_parameters["min_fraction_digits"] = 1
         self._ui_parameters["max_fraction_digits"] = 1
         self._ui_parameters["show_sparkline"] = False
+        self._ui_parameters["show_value"] = True
         self._ui_parameters["pad_auto_center"] = False
         self._ui_parameters["chart_buttons"] = True
         self._ui_parameters["chart_grid"] = True
@@ -55,7 +51,7 @@ class NumberValue(KerviValue):
         self._ui_parameters["chart_fill"] = True
         self._ui_parameters["chart_point"] = 0
         if Configuration:
-            unit_system = Configuration.display.unit_systems.default
+            unit_system = Configuration.unit_system
             chart_time_format = Configuration.display.unit_systems.systems[unit_system].datetime.chart
             self._ui_parameters["chart_time_format"] = chart_time_format
         else:
@@ -114,18 +110,7 @@ class NumberValue(KerviValue):
     def min(self, value):
         self._min_value = value
 
-    @property
-    def unit(self):
-        """
-        Metric Unit of value.
-
-        :type: ``str``
-        """
-        return self._value_unit
-
-    @unit.setter
-    def unit(self, value):
-        self._value_unit = value
+    
 
     @property
     def type(self):
@@ -149,27 +134,56 @@ class NumberValue(KerviValue):
         """
         if self._display_unit:
             return self._display_unit
-        else:
+        elif self._Q:
             config = Configuration.display.unit_systems
-            default_system = config.default
+            default_system = Configuration.unit_system
             units = config.systems[default_system]
 
-            display_unit = units.get(self._type, self._unit)
-            return display_unit
+            self._display_unit = units.get(self._type, self._unit)
+
+            if self._type == "temperature":
+                from_unit = "deg" + self._unit.upper()
+                to_unit = "deg" + self._display_unit.upper()
+            else:
+                from_unit = self._unit
+                to_unit = self._display_unit
+
+            #print("dv", from_unit, to_unit)
+            self._q_unit = self._Q("1 " + from_unit)
+            self._q_display = self._Q("1 " + to_unit)
+            
+            
+        return self._display_unit
 
     @display_unit.setter
     def display_unit(self, value):
-        self._display_unit = value
+        if value != self._display_unit:
+            self._display_unit = value
+            if self._type == "temperature":
+                from_unit = "deg" + self._unit.upper()
+                to_unit = "deg" + self._display_unit.upper()
+            else:
+                from_unit = self._unit
+                to_unit = self.display_unit
 
-    def _get_ui_parameters(self, ui_parameters):
-        ui_parameters["display_unit"] = self.display_unit
-        return ui_parameters
+            self._q_unit = self._ureg.parse_expression(from_unit)
+            self._q_display = self._ureg.parse_expression(to_unit)
 
+    @property
+    def display_value(self):
+        if self._q_display and self._q_unit:
+            dv = self._value * self._q_unit
+            return round(dv.to(self._q_display).magnitude, 3)
+        else:
+            if self._value:
+                return round(self._value, 3)
+            else:
+                return 0.0
     
     def _get_info(self, **kwargs):
         return {
             "isInput":self.is_input,
-            "value_unit":self._unit,
+            "unit":self._unit,
             "value":self.value,
             "maxValue":self._max_value,
             "minValue":self._min_value,
@@ -227,12 +241,18 @@ class NumberValue(KerviValue):
             self._last_reading = time.clock()
 
             
-            val = {"value_id":self.component_id, "value":new_value, "timestamp":datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")}
+            val = {
+                "id":self.component_id,
+                "value":new_value,
+                "timestamp":timestamp,
+                "display_value": self.display_value,
+                "display_unit": self.display_unit
+            }
             
             self.spine.trigger_event(
                 "valueChanged",
                 self.component_id,
-                {"id":self.component_id, "value":new_value, "timestamp":datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")},
+                val,
                 self._log_values,
                 groups=self.user_groups
             )
@@ -568,3 +588,113 @@ class EnumValue(KerviValue):
         #     self.component_id,
         #     {"select":self.component_id, "value":self.selected_options}
         # )
+
+
+class ColorValue(KerviValue):
+    """
+    A value that holds a rgb value.
+    When linked to a dashboard it is represented as a color button.
+    """
+    def __init__(self, name, **kwargs):
+        KerviValue.__init__(self, name, "color-value", **kwargs)
+        self._value = (255, 255, 255)
+        self._type = None
+        self._ui_parameters["type"] = "button"
+        self._ui_parameters["button_icon"] = None
+        self._ui_parameters["button_text"] = self.name,
+        self._ui_parameters["button_width"] = None
+        self._ui_parameters["button_height"] = None,
+        self._ui_parameters["input_size"] = 0
+
+    def _normalize_value(self, new_value):
+        if isinstance(new_value, str) and new_value[0]=="#":
+            #self._set_value(new_value)
+            KerviValue._set_value(self, new_value)
+        elif isinstance(new_value, list) and len(new_value)==3:
+            value = '#%02x%02x%02x' % (new_value[0], new_value[1], new_value[2])
+            KerviValue._set_value(self, value)
+            #self._set_value(value)
+        elif isinstance(new_value, tuple) and len(new_value):
+            value = '#%02x%02x%02x' % new_value
+            KerviValue._set_value(self, value)
+        else:
+            raise ValueError("invalid color value:" + str(new_value))
+
+    def _set_value(self, new_value):
+        if isinstance(new_value, str) and new_value[0]=="#":
+            #self._set_value(new_value)
+            KerviValue._set_value(self, new_value)
+        elif isinstance(new_value, list) and len(new_value)==3:
+            value = '#%02x%02x%02x' % (new_value[0], new_value[1], new_value[2])
+            KerviValue._set_value(self, value)
+            #self._set_value(value)
+        elif isinstance(new_value, tuple) and len(new_value):
+            value = '#%02x%02x%02x' % new_value
+            KerviValue._set_value(self, value)
+        else:
+            raise ValueError("invalid color value:" + str(new_value))
+    
+    @property
+    def value(self):
+        return self._value
+    
+    @value.setter
+    def value(self, new_value):
+        """
+        Updates the value.
+        If the change exceeds the change delta observers and linked values are notified.  
+        """
+        self._normalize_value(new_value)
+    
+    @property
+    def rgb(self):
+        """retuns the color value as rgb tuple"""
+        return tuple(int(self.value[i:i+2], 16) for i in (0, 2 ,4))
+
+    
+    def link_to_dashboard(self, dashboard_id=None, panel_id=None, **kwargs):
+        r"""
+        Links this value to a dashboard panel.
+
+        :param dashboard_id:
+            Id of the dashboard to link to.
+        :type dashboard_id: str
+
+        :param panel_id:
+            Id of the panel on the dashboard to link to.
+        :type panel_id: str
+
+
+        :param \**kwargs:
+            Use the kwargs below to override default values for ui parameters
+
+        :Keyword Arguments:
+            
+            * *link_to_header* (``str``) -- Link this value to the header of the panel.
+
+            * *label_icon* (``str``) -- Icon that should be displayed together with label.
+
+            * *label* (``str``) -- Label text, default value is the name of the value.
+
+            * *flat* (``bool``) -- Flat look and feel.
+
+            * *inline* (``bool``) -- Display value and label in its actual size
+                If you set inline to true the size parameter is ignored.
+                The value will only occupy as much space as the label and input takes.
+
+            * *input_size* (``int``) -- width of the slider as a percentage of the total container it sits in.
+
+            * *value_size* (``int``) -- width of the value area as a percentage of the total container it sits in.
+
+            * *type* (``string``) -- 'button' or 'input'.
+
+            
+            * *button_icon* (``string``) -- Icon to display on button.
+            * *button_text* (``string``) -- Text to display on button, default is name.
+        """
+        KerviComponent.link_to_dashboard(
+            self,
+            dashboard_id,
+            panel_id,
+            **kwargs
+        )

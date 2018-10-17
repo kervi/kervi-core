@@ -1,23 +1,5 @@
-#MIT License
-#Copyright (c) 2017 Tim Wentzlau
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+#Copyright 2016 Tim Wentlau.
+#Distributed under the MIT License. See LICENSE in root of project.
 
 """ Handles multiprocessing functionality in Kervi """
 import json
@@ -28,22 +10,10 @@ import kervi.spine as spine
 #import sys
 import kervi.core.utility.kervi_logging as k_logging
 
-
-#MAIN_SPINE = None
-# def _start_root_spine(config, reset_log=False, spine_class):
-#     global MAIN_SPINE
-#     k_logging.init_process_logging("kervi-main", config.log)
-#     k_logging.KerviLog("kervi main")
-    
-#     spine._init_spine("kervi-main", config.network.ipc_root_port, None, config.network.ipc_root_address, spine_class)
-
-# def _stop_root_spine():
-#     #MAIN_SPINE.close_all_connections()
-#     pass
-
 class _KerviProcess(object):
     def __init__(self, scope, name, config, ipcPort, root_close, **kwargs):
-        process_id = groups = kwargs.get("process_id", name)
+        #print("process", scope, name)
+        #process_id = groups = kwargs.get("process_id", name)
         self.name = name
         self._do_terminate = False
         self._is_connected = False
@@ -51,10 +21,10 @@ class _KerviProcess(object):
         self.config = config
         self.spine = self.load_spine(name, ipcPort, "tcp://" + config.network.ipc_root_address + ":" + str(config.network.ipc_root_port), config.network.ip)
         spine.set_spine(self.spine)
-        self.spine.register_command_handler("terminateProcess", self.terminate, scope=scope)
+        self.spine.register_command_handler("terminateProcess", self.terminate, scopes=[scope])
         self.spine.register_query_handler("getProcessInfo", self.get_process_info)
-        self.init_process()
-        self.spine.send_command("startThreads", scope="process")
+        self.init_process(**kwargs)
+        self.spine.send_command("startThreads", local_only=True)
 
     def __del__(self):
         #print("pd", self.name)
@@ -71,17 +41,16 @@ class _KerviProcess(object):
         return self.spine.root_gone or self._do_terminate
 
     def terminate(self):
-        print("terminate process", self.name)
+        #print("terminate process", self.name)
         self.spine.log.debug("do terminate:{0}", self.port)
-        #print("terminate:", self.port)
         self._do_terminate = True
 
-    def init_process(self):
+    def init_process(self, **kwargs):
         self.spine.log.error("abstract init_process called in KerviProcess")
 
     def _terminate_process(self):
         self.terminate_process()
-        self.spine.trigger_event("processTerminating", None, scope="process")
+        self.spine.trigger_event("processTerminating", None, local_only=True)
         #time.sleep(5)
         #self.process_spine.close_all_connections()
         self.spine.log.info("process terminated:{0}", self.port)
@@ -125,4 +94,4 @@ def _start_process(scope, name, config, port_idx, process_class, root_close=True
     return process
 
 def _stop_processes(scope):
-    spine.Spine().send_command("terminateProcess", scope=scope)
+    spine.Spine().send_command("terminateProcess", scope=[scope])

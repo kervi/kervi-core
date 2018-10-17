@@ -18,12 +18,15 @@ setup(
         'kervi/actions',
         'kervi/config',
         'kervi/controllers',
+        'kervi/core/authentication',
         'kervi/core/utility',
         'kervi/core/version',
         'kervi/dashboards',
+        'kervi/displays',
         'kervi/hal',
         'kervi/sensors',
         'kervi/spine',
+        'kervi/user_input',
         'kervi/values'
     ],
     version=VERSION,
@@ -53,5 +56,8 @@ setup(
         "Operating System :: POSIX :: Linux",
         "Programming Language :: Python :: 3.4"
     ],
+    install_requires=[
+        'pint'
+    ]
     
 )

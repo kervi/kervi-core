@@ -1,4 +1,4 @@
-from kervi.controllers.controller import Controller
+from kervi.controllers import Controller
 from kervi.values import NumberValue
 from mockup_spine import MockupSpine
 
